@@ -48,6 +48,18 @@ services:
     depends_on:
       - redpanda
 
+  # Opt-in demo load: docker compose --profile demo up traffic-sim
+  traffic-sim:
+    build:
+      context: .
+      dockerfile: services/traffic-sim/Dockerfile
+    profiles: ["demo"]
+    environment:
+      TARGET_URL: http://edge-proxy:8080
+      LOG_LEVEL: info
+    depends_on:
+      - edge-proxy
+
   redpanda:
     image: redpandadata/redpanda:latest
     command:

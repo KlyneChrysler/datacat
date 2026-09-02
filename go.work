@@ -1,6 +1,7 @@
 go 1.26
 
 use (
+	./pkg/envx
 	./pkg/events
 	./pkg/hashx
 	./pkg/httpx

@@ -3,11 +3,17 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/KlyneChrysler/datacat/pkg/envx"
 )
 
 // Load reads and validates all configuration at startup.
 func Load() (Config, error) {
-	cfg := Config{TargetURL: os.Getenv("TARGET_URL")}
+	cfg := Config{
+		TargetURL: os.Getenv("TARGET_URL"),
+		Duration:  time.Duration(envx.Int("DURATION_SECONDS", 0)) * time.Second,
+	}
 	return cfg, validate(cfg)
 }
 

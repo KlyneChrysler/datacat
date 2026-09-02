@@ -7,10 +7,12 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/KlyneChrysler/datacat/pkg/events"
 	"github.com/KlyneChrysler/datacat/pkg/hashx"
 )
 
-const SessionCookie = "dc_session"
+// SessionCookie re-exports the wire-contract cookie name for gate/observe.
+const SessionCookie = events.SessionCookie
 
 // SessionID prefers the session cookie; without one it falls back to a
 // fingerprint of IP + User-Agent so anonymous traffic still groups. O(1).

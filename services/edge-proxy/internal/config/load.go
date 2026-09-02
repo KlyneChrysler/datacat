@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"strconv"
 	"time"
+
+	"github.com/KlyneChrysler/datacat/pkg/envx"
 )
 
 // Load reads and validates all configuration at startup; a missing variable
@@ -24,23 +25,11 @@ func Load() (Config, error) {
 		DecisionsGroup:     os.Getenv("DECISIONS_GROUP"),
 		EventBufferSize:    1024,
 		GateTTL:            time.Hour,
-		RateLimitPerMinute: intFromEnv("RATE_LIMIT_PER_MINUTE", 60),
-		RateLimitBurst:     intFromEnv("RATE_LIMIT_BURST", 10),
+		RateLimitPerMinute: envx.Int("RATE_LIMIT_PER_MINUTE", 60),
+		RateLimitBurst:     envx.Int("RATE_LIMIT_BURST", 10),
 		ShutdownTimeout:    10 * time.Second,
 	}
 	return cfg, validate(cfg)
-}
-
-func intFromEnv(name string, fallback int) int {
-	raw := os.Getenv(name)
-	if raw == "" {
-		return fallback
-	}
-	value, err := strconv.Atoi(raw)
-	if err != nil || value < 1 {
-		return fallback
-	}
-	return value
 }
 
 func parseUpstream(raw string) (*url.URL, error) {
