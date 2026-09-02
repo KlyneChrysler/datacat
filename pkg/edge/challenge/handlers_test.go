@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -41,13 +42,17 @@ func TestPageServesTokenAndSolver(t *testing.T) {
 }
 
 func TestPageRejectsForeignReturnURLs(t *testing.T) {
-	handlers, _ := testHandlers()
-	w := httptest.NewRecorder()
+	hostile := []string{"//evil.example", "/\\evil.example", "https://evil.example/x", "\\/evil.example", "/ok\r\nSet-Cookie:x"}
 
-	handlers.Page(w, sessionRequest(http.MethodGet, PagePath+"?return=//evil.example", ""))
+	for _, raw := range hostile {
+		handlers, _ := testHandlers()
+		w := httptest.NewRecorder()
 
-	if strings.Contains(w.Body.String(), "evil.example") {
-		t.Error("protocol-relative return URL survived sanitization (open redirect)")
+		handlers.Page(w, sessionRequest(http.MethodGet, PagePath+"?return="+url.QueryEscape(raw), ""))
+
+		if strings.Contains(w.Body.String(), "evil.example") {
+			t.Errorf("hostile return %q survived sanitization (open redirect)", raw)
+		}
 	}
 }
 

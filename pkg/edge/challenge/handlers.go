@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -73,11 +74,16 @@ func clearanceCookie(value string) *http.Cookie {
 	return &http.Cookie{Name: guard.ClearanceCookie, Value: value, Path: "/", MaxAge: 3600, HttpOnly: true, SameSite: http.SameSiteLaxMode}
 }
 
-// sanitizeReturn allows same origin paths only.
+// sanitizeReturn allows same origin paths only, everything else becomes /.
 func sanitizeReturn(raw string) string {
-	if raw == "" || !strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "//") {
+	if strings.ContainsAny(raw, "\\\r\n\t") {
 		return "/"
 	}
 
-	return raw
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Scheme != "" || parsed.Host != "" || !strings.HasPrefix(parsed.Path, "/") || strings.HasPrefix(parsed.Path, "//") {
+		return "/"
+	}
+
+	return parsed.RequestURI()
 }
