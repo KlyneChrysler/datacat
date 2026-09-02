@@ -57,9 +57,9 @@ func run() error {
 		return err
 	}
 	publisher := kafka.NewDecisionPublisher(producer, cfg.DecisionsTopic)
-	enforcer := app.NewEnforcer(domain.DefaultPolicy(), store, publisher, actions.NewLogApplier(log))
+	enforcer := app.NewEnforcer(domain.DefaultPolicy(), store, publisher, actions.NewLogApplier(log), app.NewTally())
 	source := kafka.NewVerdictSource(consumer)
-	server := httpx.NewServer(cfg.Port, httpapi.NewRouter(httpapi.New(enforcer, log), log), cfg.ShutdownTimeout)
+	server := httpx.NewServer(cfg.Port, httpapi.NewRouter(httpapi.New(enforcer, log), log, cfg.CORSOrigin), cfg.ShutdownTimeout)
 
 	log.Info("starting", "port", cfg.Port, "topic", cfg.VerdictsTopic, "group", cfg.ConsumerGroup)
 	g, ctx := errgroup.WithContext(ctx)

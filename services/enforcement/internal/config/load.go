@@ -17,6 +17,7 @@ func Load() (Config, error) {
 		ConsumerGroup:   os.Getenv("CONSUMER_GROUP"),
 		DecisionsTable:  os.Getenv("DECISIONS_TABLE"),
 		DynamoEndpoint:  os.Getenv("DYNAMO_ENDPOINT"),
+		CORSOrigin:      os.Getenv("CORS_ORIGIN"),
 		DecisionTTL:     time.Hour,
 		ShutdownTimeout: 10 * time.Second,
 	}

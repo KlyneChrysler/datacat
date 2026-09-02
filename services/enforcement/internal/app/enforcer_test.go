@@ -77,7 +77,7 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 			store := &fakeStore{err: tt.storeErr}
 			publisher := &fakePublisher{err: tt.publishErr}
 			applier := &fakeApplier{err: tt.applierErr}
-			enforcer := NewEnforcer(domain.DefaultPolicy(), store, publisher, applier)
+			enforcer := NewEnforcer(domain.DefaultPolicy(), store, publisher, applier, NewTally())
 
 			err := enforcer.HandleVerdict(context.Background(), abusiveVerdict(t))
 
@@ -97,7 +97,7 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 
 func TestEnforcerLookupReturnsStoredDecision(t *testing.T) {
 	store := &fakeStore{}
-	enforcer := NewEnforcer(domain.DefaultPolicy(), store, &fakePublisher{}, &fakeApplier{})
+	enforcer := NewEnforcer(domain.DefaultPolicy(), store, &fakePublisher{}, &fakeApplier{}, NewTally())
 	if err := enforcer.HandleVerdict(context.Background(), abusiveVerdict(t)); err != nil {
 		t.Fatal(err)
 	}

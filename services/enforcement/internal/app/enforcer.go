@@ -14,15 +14,17 @@ type Enforcer struct {
 	store     ports.DecisionStore
 	publisher ports.DecisionPublisher
 	applier   ports.ActionApplier
+	tally     *Tally
 }
 
 func NewEnforcer(policy domain.Policy, store ports.DecisionStore,
-	publisher ports.DecisionPublisher, applier ports.ActionApplier) *Enforcer {
-	return &Enforcer{policy: policy, store: store, publisher: publisher, applier: applier}
+	publisher ports.DecisionPublisher, applier ports.ActionApplier, tally *Tally) *Enforcer {
+	return &Enforcer{policy: policy, store: store, publisher: publisher, applier: applier, tally: tally}
 }
 
 // HandleVerdict is an orchestrator: every line delegates.
 func (e *Enforcer) HandleVerdict(ctx context.Context, v domain.Verdict) error {
+	e.tally.Record(v.Class)
 	decision := e.policy.Decide(v)
 	if err := e.store.Save(ctx, decision); err != nil {
 		return fmt.Errorf("save decision for session %s: %w", v.SessionID, err)
@@ -38,4 +40,8 @@ func (e *Enforcer) HandleVerdict(ctx context.Context, v domain.Verdict) error {
 
 func (e *Enforcer) Lookup(ctx context.Context, sessionID string) (domain.Decision, error) {
 	return e.store.FindBySession(ctx, sessionID)
+}
+
+func (e *Enforcer) TrafficSummary(windowMinutes int) domain.TrafficSummary {
+	return e.tally.Summary(windowMinutes)
 }

@@ -17,8 +17,7 @@ public final class FeatureWindowFunction
 	}
 
 	@Override
-	public void process(String sessionId, Context context, Iterable<FeatureAccumulator> accumulators,
-			Collector<SessionFeatures> out) {
+	public void process(String sessionId, Context context, Iterable<FeatureAccumulator> accumulators, Collector<SessionFeatures> out) {
 		FeatureAccumulator acc = accumulators.iterator().next();
 		out.collect(toFeatures(sessionId, context.window().getEnd(), acc));
 	}

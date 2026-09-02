@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/app"
@@ -30,6 +31,12 @@ func (h *Handlers) Ready(w http.ResponseWriter, _ *http.Request) {
 	httpx.JSON(w, http.StatusOK, map[string]string{"status": "ready"})
 }
 
+func (h *Handlers) GetTrafficSummary(w http.ResponseWriter, r *http.Request) {
+	windowMinutes := parseWindowMinutes(r.URL.Query().Get("windowMinutes"))
+	summary := h.enforcer.TrafficSummary(windowMinutes)
+	httpx.JSON(w, http.StatusOK, toTrafficSummaryResponse(summary))
+}
+
 func (h *Handlers) GetDecision(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.PathValue("sessionID")
 	decision, err := h.enforcer.Lookup(r.Context(), sessionID)
@@ -41,4 +48,15 @@ func (h *Handlers) GetDecision(w http.ResponseWriter, r *http.Request) {
 	default:
 		httpx.JSON(w, http.StatusOK, toDecisionResponse(decision))
 	}
+}
+
+// parseWindowMinutes accepts a boundary value leniently: the Tally clamps to
+// its valid range, so any unparsable input falls back to the default window.
+func parseWindowMinutes(raw string) int {
+	const defaultWindow = 15
+	minutes, err := strconv.Atoi(raw)
+	if err != nil {
+		return defaultWindow
+	}
+	return minutes
 }

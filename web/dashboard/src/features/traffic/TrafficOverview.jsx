@@ -1,4 +1,5 @@
 import { useTrafficSummary } from "./useTrafficSummary";
+import { ClassificationList } from "./ClassificationList";
 import { ErrorPanel, LoadingPanel } from "../../components";
 
 export default function TrafficOverview() {
@@ -9,8 +10,8 @@ export default function TrafficOverview() {
 
 	return (
 		<section>
-			<h2>Traffic — last 15 minutes</h2>
-			<pre>{JSON.stringify(data, null, 2)}</pre>
+			<h2>Sessions classified — last {data.window_minutes} minutes</h2>
+			<ClassificationList summary={data} />
 		</section>
 	);
 }
