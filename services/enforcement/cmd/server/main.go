@@ -44,8 +44,14 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	producer, err := kafkax.NewProducer(cfg.KafkaBrokers)
+	if err != nil {
+		return err
+	}
+	defer producer.Close()
 
-	enforcer := app.NewEnforcer(domain.DefaultPolicy(), memory.NewDecisionStore(), actions.NewLogApplier(log))
+	publisher := kafka.NewDecisionPublisher(producer, cfg.DecisionsTopic)
+	enforcer := app.NewEnforcer(domain.DefaultPolicy(), memory.NewDecisionStore(), publisher, actions.NewLogApplier(log))
 	source := kafka.NewVerdictSource(consumer)
 	server := httpx.NewServer(cfg.Port, httpapi.NewRouter(httpapi.New(enforcer, log), log), cfg.ShutdownTimeout)
 

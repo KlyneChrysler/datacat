@@ -39,6 +39,16 @@ func (f *fakeApplier) Apply(_ context.Context, d domain.Decision) error {
 	return f.err
 }
 
+type fakePublisher struct {
+	published []domain.Decision
+	err       error
+}
+
+func (f *fakePublisher) PublishDecision(_ context.Context, d domain.Decision) error {
+	f.published = append(f.published, d)
+	return f.err
+}
+
 func abusiveVerdict(t *testing.T) domain.Verdict {
 	t.Helper()
 	verdict, err := domain.NewVerdict("s-1", domain.Abusive, 0.95)
@@ -52,19 +62,22 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 	tests := []struct {
 		name       string
 		storeErr   error
+		publishErr error
 		applierErr error
 		wantAction domain.Action
 		wantErr    bool
 	}{
 		{name: "abusive session gets blocked", wantAction: domain.Block},
 		{name: "store failure propagates", storeErr: errBoom, wantErr: true},
+		{name: "publish failure propagates", publishErr: errBoom, wantErr: true},
 		{name: "applier failure propagates", applierErr: errBoom, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store := &fakeStore{err: tt.storeErr}
+			publisher := &fakePublisher{err: tt.publishErr}
 			applier := &fakeApplier{err: tt.applierErr}
-			enforcer := NewEnforcer(domain.DefaultPolicy(), store, applier)
+			enforcer := NewEnforcer(domain.DefaultPolicy(), store, publisher, applier)
 
 			err := enforcer.HandleVerdict(context.Background(), abusiveVerdict(t))
 
@@ -74,8 +87,9 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 			if !tt.wantErr && store.saved[0].Action != tt.wantAction {
 				t.Errorf("stored action = %s, want %s", store.saved[0].Action, tt.wantAction)
 			}
-			if !tt.wantErr && len(applier.applied) != 1 {
-				t.Errorf("applied %d decisions, want 1", len(applier.applied))
+			if !tt.wantErr && (len(publisher.published) != 1 || len(applier.applied) != 1) {
+				t.Errorf("published %d, applied %d decisions, want 1 and 1",
+					len(publisher.published), len(applier.applied))
 			}
 		})
 	}
@@ -83,7 +97,7 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 
 func TestEnforcerLookupReturnsStoredDecision(t *testing.T) {
 	store := &fakeStore{}
-	enforcer := NewEnforcer(domain.DefaultPolicy(), store, &fakeApplier{})
+	enforcer := NewEnforcer(domain.DefaultPolicy(), store, &fakePublisher{}, &fakeApplier{})
 	if err := enforcer.HandleVerdict(context.Background(), abusiveVerdict(t)); err != nil {
 		t.Fatal(err)
 	}

@@ -11,3 +11,8 @@ import (
 type EventPublisher interface {
 	PublishRequest(ctx context.Context, ev events.RequestEvent) error
 }
+
+type DecisionSource interface {
+	// Consume blocks, invoking handle for each decision until ctx is done.
+	Consume(ctx context.Context, handle func(events.Decision)) error
+}

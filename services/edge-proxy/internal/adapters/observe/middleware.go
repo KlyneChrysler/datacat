@@ -4,9 +4,6 @@
 package observe
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -14,10 +11,9 @@ import (
 
 	"github.com/KlyneChrysler/datacat/pkg/events"
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
+	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/ident"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/app"
 )
-
-const sessionCookie = "dc_session"
 
 func Middleware(recorder *app.Recorder) httpx.Middleware {
 	return func(next http.Handler) http.Handler {
@@ -30,32 +26,15 @@ func Middleware(recorder *app.Recorder) httpx.Middleware {
 
 func eventFrom(r *http.Request) events.RequestEvent {
 	return events.RequestEvent{
-		SessionID:      sessionID(r),
+		SessionID:      ident.SessionID(r),
 		Timestamp:      time.Now().UTC(),
 		Method:         r.Method,
 		Path:           r.URL.Path,
-		ClientIP:       clientIP(r),
+		ClientIP:       ident.ClientIP(r),
 		UserAgent:      r.UserAgent(),
 		HeaderOrder:    headerOrderHash(r),
 		TLSFingerprint: "", // requires raw ClientHello capture; later phase
 	}
-}
-
-// sessionID prefers the session cookie; without one it falls back to a
-// fingerprint of IP + User-Agent so anonymous traffic still groups.
-func sessionID(r *http.Request) string {
-	if cookie, err := r.Cookie(sessionCookie); err == nil && cookie.Value != "" {
-		return cookie.Value
-	}
-	return shortHash(clientIP(r) + "|" + r.UserAgent())
-}
-
-func clientIP(r *http.Request) string {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return host
 }
 
 // headerOrderHash approximates a header fingerprint. net/http stores headers
@@ -67,10 +46,5 @@ func headerOrderHash(r *http.Request) string {
 		names = append(names, name)
 	}
 	slices.Sort(names)
-	return shortHash(strings.Join(names, ","))
-}
-
-func shortHash(s string) string {
-	sum := sha256.Sum256([]byte(s))
-	return hex.EncodeToString(sum[:8])
+	return ident.ShortHash(strings.Join(names, ","))
 }

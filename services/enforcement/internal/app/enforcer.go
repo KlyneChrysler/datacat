@@ -10,13 +10,15 @@ import (
 )
 
 type Enforcer struct {
-	policy  domain.Policy
-	store   ports.DecisionStore
-	applier ports.ActionApplier
+	policy    domain.Policy
+	store     ports.DecisionStore
+	publisher ports.DecisionPublisher
+	applier   ports.ActionApplier
 }
 
-func NewEnforcer(policy domain.Policy, store ports.DecisionStore, applier ports.ActionApplier) *Enforcer {
-	return &Enforcer{policy: policy, store: store, applier: applier}
+func NewEnforcer(policy domain.Policy, store ports.DecisionStore,
+	publisher ports.DecisionPublisher, applier ports.ActionApplier) *Enforcer {
+	return &Enforcer{policy: policy, store: store, publisher: publisher, applier: applier}
 }
 
 // HandleVerdict is an orchestrator: every line delegates.
@@ -24,6 +26,9 @@ func (e *Enforcer) HandleVerdict(ctx context.Context, v domain.Verdict) error {
 	decision := e.policy.Decide(v)
 	if err := e.store.Save(ctx, decision); err != nil {
 		return fmt.Errorf("save decision for session %s: %w", v.SessionID, err)
+	}
+	if err := e.publisher.PublishDecision(ctx, decision); err != nil {
+		return fmt.Errorf("publish decision for session %s: %w", v.SessionID, err)
 	}
 	if err := e.applier.Apply(ctx, decision); err != nil {
 		return fmt.Errorf("apply %s for session %s: %w", decision.Action, v.SessionID, err)

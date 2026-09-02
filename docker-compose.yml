@@ -16,6 +16,8 @@ services:
       UPSTREAM_URL: http://whoami:80
       KAFKA_BROKERS: redpanda:9092
       REQUESTS_TOPIC: datacat.requests
+      DECISIONS_TOPIC: datacat.decisions
+      DECISIONS_GROUP: edge-proxy
       LOG_LEVEL: info
     ports:
       - "8080:8080"
@@ -31,6 +33,7 @@ services:
       PORT: "8081"
       KAFKA_BROKERS: redpanda:9092
       VERDICTS_TOPIC: datacat.verdicts
+      DECISIONS_TOPIC: datacat.decisions
       CONSUMER_GROUP: enforcement
       LOG_LEVEL: info
     ports:
@@ -56,7 +59,7 @@ services:
     image: redpandadata/redpanda:latest
     entrypoint: ["/bin/sh", "-c"]
     command: >
-      "rpk topic create datacat.requests datacat.verdicts -p 3 -X brokers=redpanda:9092 || true"
+      "rpk topic create datacat.requests datacat.verdicts datacat.decisions -p 3 -X brokers=redpanda:9092 || true"
     depends_on:
       - redpanda
 

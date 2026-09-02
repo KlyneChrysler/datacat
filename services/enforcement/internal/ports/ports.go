@@ -17,6 +17,10 @@ type ActionApplier interface {
 	Apply(ctx context.Context, d domain.Decision) error
 }
 
+type DecisionPublisher interface {
+	PublishDecision(ctx context.Context, d domain.Decision) error
+}
+
 type VerdictSource interface {
 	// Consume blocks, invoking handle for each verdict until ctx is done.
 	Consume(ctx context.Context, handle func(context.Context, domain.Verdict) error) error

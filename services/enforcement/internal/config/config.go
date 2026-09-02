@@ -12,6 +12,7 @@ type Config struct {
 	Port            string
 	KafkaBrokers    string
 	VerdictsTopic   string
+	DecisionsTopic  string
 	ConsumerGroup   string
 	ShutdownTimeout time.Duration
 }
@@ -21,6 +22,7 @@ func Load() (Config, error) {
 		Port:            os.Getenv("PORT"),
 		KafkaBrokers:    os.Getenv("KAFKA_BROKERS"),
 		VerdictsTopic:   os.Getenv("VERDICTS_TOPIC"),
+		DecisionsTopic:  os.Getenv("DECISIONS_TOPIC"),
 		ConsumerGroup:   os.Getenv("CONSUMER_GROUP"),
 		ShutdownTimeout: 10 * time.Second,
 	}
@@ -29,10 +31,11 @@ func Load() (Config, error) {
 
 func (c Config) validate() error {
 	for name, v := range map[string]string{
-		"PORT":           c.Port,
-		"KAFKA_BROKERS":  c.KafkaBrokers,
-		"VERDICTS_TOPIC": c.VerdictsTopic,
-		"CONSUMER_GROUP": c.ConsumerGroup,
+		"PORT":            c.Port,
+		"KAFKA_BROKERS":   c.KafkaBrokers,
+		"VERDICTS_TOPIC":  c.VerdictsTopic,
+		"DECISIONS_TOPIC": c.DecisionsTopic,
+		"CONSUMER_GROUP":  c.ConsumerGroup,
 	} {
 		if v == "" {
 			return fmt.Errorf("config: %s is required", name)
