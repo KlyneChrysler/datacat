@@ -1,0 +1,22 @@
+# One-off admin process (twelve-factor XII): topics are provisioned
+# explicitly by a Job, never auto-created by the broker.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: topic-init
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels: { app: topic-init }
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: topic-init
+          image: {{ .Values.redpanda.image }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - rpk topic create {{ join " " .Values.topics }} -p {{ .Values.partitions }} -X brokers=redpanda:9092 || true
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 128Mi }

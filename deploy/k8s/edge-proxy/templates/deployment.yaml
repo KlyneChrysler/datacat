@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-proxy
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels: { app: edge-proxy }
+  template:
+    metadata:
+      labels: { app: edge-proxy }
+    spec:
+      serviceAccountName: edge-proxy
+      securityContext:
+        runAsNonRoot: true
+        # distroless :nonroot declares its user by name; kubelet needs the
+        # numeric UID to verify runAsNonRoot.
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: edge-proxy
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.port }}
+          envFrom:
+            - configMapRef: { name: edge-proxy-config }
+            - secretRef: { name: edge-proxy-secrets, optional: true }
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          resources: {{ .Values.resources | toYaml | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+      # Matches the app's 10s drain plus margin (factor IX).
+      terminationGracePeriodSeconds: 30

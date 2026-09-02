@@ -1,0 +1,23 @@
+# NOTE: replicas stays 1 while DecisionStore is in-memory - two replicas
+# would each hold half the decisions behind one Service. The DynamoDB
+# adapter (AWS phase) makes this horizontally scalable.
+replicas: 1
+
+image:
+  repository: datacat/enforcement
+  tag: dev
+  pullPolicy: Never
+
+env:
+  PORT: "8081"
+  KAFKA_BROKERS: redpanda:9092
+  VERDICTS_TOPIC: datacat.verdicts
+  DECISIONS_TOPIC: datacat.decisions
+  CONSUMER_GROUP: enforcement
+  LOG_LEVEL: info
+
+port: 8081
+
+resources:
+  requests: { cpu: 100m, memory: 64Mi }
+  limits: { memory: 128Mi }

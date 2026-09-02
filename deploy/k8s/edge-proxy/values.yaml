@@ -1,0 +1,24 @@
+replicas: 2
+
+image:
+  repository: datacat/edge-proxy
+  tag: dev
+  # Never for kind-loaded local images; ECR digests in AWS envs.
+  pullPolicy: Never
+
+# Non-secret env (factor III) rendered into the ConfigMap. Secrets, when they
+# exist, go into the <name>-secrets Secret - never here.
+env:
+  PORT: "8080"
+  UPSTREAM_URL: http://whoami:80
+  KAFKA_BROKERS: redpanda:9092
+  REQUESTS_TOPIC: datacat.requests
+  DECISIONS_TOPIC: datacat.decisions
+  DECISIONS_GROUP: edge-proxy
+  LOG_LEVEL: info
+
+port: 8080
+
+resources:
+  requests: { cpu: 100m, memory: 64Mi }
+  limits: { memory: 128Mi }

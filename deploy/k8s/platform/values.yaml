@@ -1,0 +1,9 @@
+redpanda:
+  image: redpandadata/redpanda:latest
+whoami:
+  image: traefik/whoami:latest
+topics:
+  - datacat.requests
+  - datacat.verdicts
+  - datacat.decisions
+partitions: 3

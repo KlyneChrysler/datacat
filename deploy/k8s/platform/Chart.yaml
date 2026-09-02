@@ -1,0 +1,5 @@
+apiVersion: v2
+name: datacat-platform
+description: Third-party backing services for local clusters - Redpanda, demo upstream, topic provisioning
+type: application
+version: 0.1.0

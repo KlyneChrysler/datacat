@@ -1,0 +1,5 @@
+apiVersion: v2
+name: edge-proxy
+description: datacat edge-proxy - request interception, event emission, decision gate
+type: application
+version: 0.1.0

@@ -45,7 +45,11 @@ func run() error {
 		return err
 	}
 	defer producer.Close()
-	consumer, err := kafkax.NewConsumer(cfg.KafkaBrokers, cfg.DecisionsGroup, cfg.DecisionsTopic, log)
+	// Every proxy replica must see EVERY decision (broadcast), so each
+	// instance gets its own consumer group - a shared group would split
+	// decisions across replicas. A fresh instance replays the retained
+	// topic, rebuilding its gate state on startup.
+	consumer, err := kafkax.NewConsumer(cfg.KafkaBrokers, instanceGroup(cfg.DecisionsGroup), cfg.DecisionsTopic, log)
 	if err != nil {
 		return err
 	}
@@ -64,6 +68,14 @@ func run() error {
 	return g.Wait()
 }
 
+func instanceGroup(base string) string {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return base
+	}
+	return base + "-" + hostname
+}
+
 // newRouter wires the traffic path: observe first (blocked requests are
 // signal too), then the gate, then the upstream proxy. Health endpoints stay
 // outside both.
@@ -75,6 +87,9 @@ func newRouter(cfg config.Config, recorder *app.Recorder, gatekeeper *app.Gateke
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		httpx.JSON(w, http.StatusOK, map[string]string{"status": "alive"})
+	})
+	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) {
+		httpx.JSON(w, http.StatusOK, map[string]string{"status": "ready"})
 	})
 	mux.Handle("/", traffic)
 	return httpx.WithMiddleware(mux, httpx.RequestID(), httpx.Logging(log), httpx.Recover(log))
