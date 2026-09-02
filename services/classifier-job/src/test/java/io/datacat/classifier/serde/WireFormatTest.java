@@ -14,11 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 /** Guards compatibility with the Go services' wire format (pkg/events). */
 class WireFormatTest {
 
-	// Verbatim event produced by edge-proxy during the Kafka-phase e2e run.
+	// Verbatim event shape produced by edge-proxy (verified_agent added in
+	// the agent-identity phase).
 	private static final String GO_PRODUCED_EVENT = """
 			{"session_id":"demo-scraper-1","timestamp":"2026-09-02T07:37:28.142807Z",\
 			"method":"GET","path":"/products","client_ip":"::1","user_agent":"curl/8.7.1",\
-			"header_order":"c29cbedeb1df3065","tls_fingerprint":""}""";
+			"header_order":"c29cbedeb1df3065","tls_fingerprint":"","verified_agent":true}""";
 
 	@Test
 	void deserializesEventExactlyAsGoProducesIt() {
@@ -30,6 +31,17 @@ class WireFormatTest {
 		assertEquals("/products", event.path());
 		assertEquals("curl/8.7.1", event.userAgent());
 		assertEquals(1788334648142L, event.timestampMillis());
+		assertEquals(true, event.verifiedAgent());
+	}
+
+	@Test
+	void missingVerifiedAgentFieldDefaultsFalse() {
+		String legacy = GO_PRODUCED_EVENT.replace(",\"verified_agent\":true", "");
+
+		RequestEvent event = new RequestEventDeserializer()
+				.deserialize(legacy.getBytes(StandardCharsets.UTF_8));
+
+		assertEquals(false, event.verifiedAgent());
 	}
 
 	@Test

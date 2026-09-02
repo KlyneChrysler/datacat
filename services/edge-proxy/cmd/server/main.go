@@ -15,6 +15,7 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
 	"github.com/KlyneChrysler/datacat/pkg/kafkax"
 	"github.com/KlyneChrysler/datacat/pkg/obsx"
+	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/agentauth"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/challenge"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/gate"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/kafka"
@@ -74,7 +75,10 @@ func run() error {
 // able to reach the verification endpoints.
 func newRouter(cfg config.Config, recorder *app.Recorder, gatekeeper *app.Gatekeeper,
 	limiter *app.RateLimiter, challenger *app.Challenger, log *slog.Logger) http.Handler {
+	// Order: verify agent identity first (observe stamps the result on the
+	// event), then observe, then the gate.
 	traffic := httpx.WithMiddleware(proxy.New(cfg.UpstreamURL, log),
+		agentauth.Middleware(app.NewAgentVerifier(cfg.AgentKeys)),
 		observe.Middleware(recorder), gate.Middleware(gatekeeper, limiter, challenger, log))
 	verification := challenge.New(challenger, log)
 

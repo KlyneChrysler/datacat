@@ -4,8 +4,9 @@ import "time"
 
 // DefaultPersonas is the registry (file taxonomy, standards rule 2): the
 // three standard actors the classifier must separate. Adding a persona
-// means adding an entry here — nothing else changes.
-func DefaultPersonas() []Persona {
+// means adding an entry here — nothing else changes. agentCred, when
+// non-nil, lets the polite agent sign its requests as a verified agent.
+func DefaultPersonas(agentCred *AgentCredential) []Persona {
 	return []Persona{
 		{
 			Name:      "human",
@@ -16,12 +17,13 @@ func DefaultPersonas() []Persona {
 			Paths:     NewLoopingPaths([]string{"/home", "/products", "/products", "/cart", "/home"}),
 		},
 		{
-			Name:      "polite-agent",
-			SessionID: "sim-agent",
-			UserAgent: "datacat-agent/1.0 (+https://github.com/KlyneChrysler/datacat)",
-			BaseDelay: 800 * time.Millisecond,
-			Jitter:    100 * time.Millisecond,
-			Paths:     NewLoopingPaths([]string{"/api/catalog", "/api/prices"}),
+			Name:       "polite-agent",
+			SessionID:  "sim-agent",
+			UserAgent:  "datacat-agent/1.0 (+https://github.com/KlyneChrysler/datacat)",
+			BaseDelay:  800 * time.Millisecond,
+			Jitter:     100 * time.Millisecond,
+			Paths:      NewLoopingPaths([]string{"/api/catalog", "/api/prices"}),
+			Credential: agentCred,
 		},
 		{
 			Name:      "scraper",

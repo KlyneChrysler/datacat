@@ -3,6 +3,7 @@
 package config
 
 import (
+	"crypto/ed25519"
 	"net/url"
 	"time"
 )
@@ -27,5 +28,9 @@ type Config struct {
 	// Optional env CHALLENGE_DIFFICULTY_BITS; ~16 solves in under a second
 	// in a browser.
 	ChallengeDifficulty int
-	ShutdownTimeout     time.Duration
+	// AgentKeys registers trusted agent public keys. Optional env
+	// AGENT_KEYS as "keyid=hexpubkey;keyid2=hexpubkey"; empty means no
+	// agent verifies.
+	AgentKeys       map[string]ed25519.PublicKey
+	ShutdownTimeout time.Duration
 }

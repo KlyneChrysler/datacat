@@ -10,7 +10,7 @@ class ScorersTest {
 
 	private static SessionFeatures features(double intervalCv, double rpm, double entropy,
 			long count, String userAgent) {
-		return new SessionFeatures("s-1", 0L, count, rpm, intervalCv, entropy, count, userAgent);
+		return new SessionFeatures("s-1", 0L, count, rpm, intervalCv, entropy, count, userAgent, 0);
 	}
 
 	@Test

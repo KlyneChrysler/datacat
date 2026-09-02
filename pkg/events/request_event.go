@@ -16,4 +16,5 @@ type RequestEvent struct {
 	UserAgent      string    `json:"user_agent"`
 	HeaderOrder    string    `json:"header_order"`    // hash of header names in wire order
 	TLSFingerprint string    `json:"tls_fingerprint"` // e.g. JA4, empty if unavailable
+	VerifiedAgent  bool      `json:"verified_agent"`  // request carried a valid trusted-agent signature
 }

@@ -1,9 +1,12 @@
 package config
 
 import (
+	"crypto/ed25519"
+	"encoding/hex"
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/KlyneChrysler/datacat/pkg/envx"
@@ -13,6 +16,10 @@ import (
 // crashes the process at boot, not at first use.
 func Load() (Config, error) {
 	upstream, err := parseUpstream(os.Getenv("UPSTREAM_URL"))
+	if err != nil {
+		return Config{}, err
+	}
+	agentKeys, err := parseAgentKeys(os.Getenv("AGENT_KEYS"))
 	if err != nil {
 		return Config{}, err
 	}
@@ -29,9 +36,31 @@ func Load() (Config, error) {
 		RateLimitBurst:      envx.Int("RATE_LIMIT_BURST", 10),
 		ChallengeSecret:     os.Getenv("CHALLENGE_SECRET"),
 		ChallengeDifficulty: envx.Int("CHALLENGE_DIFFICULTY_BITS", 16),
+		AgentKeys:           agentKeys,
 		ShutdownTimeout:     10 * time.Second,
 	}
 	return cfg, validate(cfg)
+}
+
+// parseAgentKeys reads "keyid=hexpubkey;..." — a malformed entry fails
+// startup rather than silently dropping a trusted key.
+func parseAgentKeys(raw string) (map[string]ed25519.PublicKey, error) {
+	keys := make(map[string]ed25519.PublicKey)
+	if raw == "" {
+		return keys, nil
+	}
+	for _, entry := range strings.Split(raw, ";") {
+		keyID, hexKey, found := strings.Cut(entry, "=")
+		if !found {
+			return nil, fmt.Errorf("config: AGENT_KEYS entry %q is not keyid=hexpubkey", entry)
+		}
+		pub, err := hex.DecodeString(hexKey)
+		if err != nil || len(pub) != ed25519.PublicKeySize {
+			return nil, fmt.Errorf("config: AGENT_KEYS %q has an invalid public key", keyID)
+		}
+		keys[keyID] = ed25519.PublicKey(pub)
+	}
+	return keys, nil
 }
 
 func parseUpstream(raw string) (*url.URL, error) {

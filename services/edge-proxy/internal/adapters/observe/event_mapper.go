@@ -8,6 +8,7 @@ import (
 
 	"github.com/KlyneChrysler/datacat/pkg/events"
 	"github.com/KlyneChrysler/datacat/pkg/hashx"
+	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/agentauth"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/ident"
 )
 
@@ -23,6 +24,7 @@ func eventFrom(r *http.Request) events.RequestEvent {
 		UserAgent:      r.UserAgent(),
 		HeaderOrder:    headerOrderHash(r),
 		TLSFingerprint: "", // requires raw ClientHello capture; later phase
+		VerifiedAgent:  agentauth.Verified(r.Context()),
 	}
 }
 

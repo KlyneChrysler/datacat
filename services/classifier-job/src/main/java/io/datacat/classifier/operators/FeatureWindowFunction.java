@@ -31,6 +31,7 @@ public final class FeatureWindowFunction
 				FeatureMath.intervalCv(acc.timestamps),
 				FeatureMath.normalizedPathEntropy(acc.paths),
 				FeatureMath.distinctPaths(acc.paths),
-				acc.userAgent);
+				acc.userAgent,
+				acc.requestCount == 0 ? 0 : (double) acc.verifiedCount / acc.requestCount);
 	}
 }

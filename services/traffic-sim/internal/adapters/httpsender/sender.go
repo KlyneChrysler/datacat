@@ -53,5 +53,6 @@ func (s *Sender) build(ctx context.Context, req domain.Request) (*http.Request, 
 	}
 	httpReq.Header.Set("User-Agent", req.UserAgent)
 	httpReq.AddCookie(&http.Cookie{Name: events.SessionCookie, Value: req.SessionID})
+	sign(httpReq, req)
 	return httpReq, nil
 }

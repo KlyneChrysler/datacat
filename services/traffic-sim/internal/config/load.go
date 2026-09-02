@@ -11,8 +11,9 @@ import (
 // Load reads and validates all configuration at startup.
 func Load() (Config, error) {
 	cfg := Config{
-		TargetURL: os.Getenv("TARGET_URL"),
-		Duration:  time.Duration(envx.Int("DURATION_SECONDS", 0)) * time.Second,
+		TargetURL:    os.Getenv("TARGET_URL"),
+		Duration:     time.Duration(envx.Int("DURATION_SECONDS", 0)) * time.Second,
+		AgentKeySeed: os.Getenv("AGENT_KEY_SEED"),
 	}
 	return cfg, validate(cfg)
 }

@@ -10,8 +10,13 @@ import java.util.List;
 public record Thresholds(double humanBelow, double abusiveFrom) implements Serializable {
 
 	public static final String HUMAN = "human";
+	public static final String VERIFIED = "verified_agent";
 	public static final String UNVERIFIED = "unverified_automation";
 	public static final String ABUSIVE = "abusive";
+
+	// A session counts as identity-verified when at least this share of its
+	// window's requests carried a valid trusted-agent signature.
+	private static final double VERIFIED_SHARE_FLOOR = 0.9;
 
 	public Thresholds {
 		if (humanBelow <= 0 || abusiveFrom <= humanBelow || abusiveFrom > 1) {
@@ -24,8 +29,14 @@ public record Thresholds(double humanBelow, double abusiveFrom) implements Seria
 		return new Thresholds(0.45, 0.75);
 	}
 
-	public Verdict verdictFor(String sessionId, long atMillis, List<Score> scores) {
+	// Verified identity yields VERIFIED unless behavior crosses the abusive
+	// threshold — bad behavior trumps good identity.
+	public Verdict verdictFor(String sessionId, long atMillis, List<Score> scores,
+			double verifiedShare) {
 		double average = average(scores);
+		if (verifiedShare >= VERIFIED_SHARE_FLOOR && average < abusiveFrom) {
+			return new Verdict(sessionId, atMillis, VERIFIED, verifiedShare);
+		}
 		return new Verdict(sessionId, atMillis, classify(average), confidence(average));
 	}
 

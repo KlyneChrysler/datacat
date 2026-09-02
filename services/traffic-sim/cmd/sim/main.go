@@ -5,6 +5,9 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/sha256"
+	"encoding/hex"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -37,9 +40,23 @@ func run() error {
 	ctx, cancel := withOptionalDeadline(ctx, cfg)
 	defer cancel()
 
-	simulator := app.NewSimulator(httpsender.NewSender(cfg.TargetURL), log, domain.DefaultPersonas())
+	personas := domain.DefaultPersonas(agentCredential(cfg, log))
+	simulator := app.NewSimulator(httpsender.NewSender(cfg.TargetURL), log, personas)
 	log.Info("starting", "target", cfg.TargetURL, "duration", cfg.Duration.String())
 	return simulator.Run(ctx)
+}
+
+// agentCredential derives the polite agent's signing key from the seed
+// (wiring): the proxy registers the printed public key via AGENT_KEYS.
+func agentCredential(cfg config.Config, log *slog.Logger) *domain.AgentCredential {
+	if cfg.AgentKeySeed == "" {
+		return nil
+	}
+	seed := sha256.Sum256([]byte(cfg.AgentKeySeed))
+	key := ed25519.NewKeyFromSeed(seed[:])
+	log.Info("agent signing enabled", "key_id", "sim-agent-key",
+		"public_key", hex.EncodeToString(key.Public().(ed25519.PublicKey)))
+	return &domain.AgentCredential{KeyID: "sim-agent-key", Key: key}
 }
 
 func withOptionalDeadline(ctx context.Context, cfg config.Config) (context.Context, context.CancelFunc) {

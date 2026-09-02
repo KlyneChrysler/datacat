@@ -35,7 +35,7 @@ func TestNextRequestCarriesIdentity(t *testing.T) {
 }
 
 func TestDefaultPersonasAreDistinctSessions(t *testing.T) {
-	personas := DefaultPersonas()
+	personas := DefaultPersonas(nil)
 	sessions := make(map[string]bool, len(personas))
 
 	for _, p := range personas {

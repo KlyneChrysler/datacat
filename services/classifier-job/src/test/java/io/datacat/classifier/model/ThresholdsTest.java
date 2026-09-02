@@ -11,10 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ThresholdsTest {
 
 	private static Verdict verdictWith(double... likelihoods) {
+		return verdictWithShare(0, likelihoods);
+	}
+
+	private static Verdict verdictWithShare(double verifiedShare, double... likelihoods) {
 		List<Score> scores = java.util.Arrays.stream(likelihoods)
 				.mapToObj(l -> new Score("test", l))
 				.toList();
-		return Thresholds.defaults().verdictFor("s-1", 42L, scores);
+		return Thresholds.defaults().verdictFor("s-1", 42L, scores, verifiedShare);
 	}
 
 	@Test
@@ -50,5 +54,26 @@ class ThresholdsTest {
 	@Test
 	void invalidThresholdOrderingIsRejected() {
 		assertThrows(IllegalArgumentException.class, () -> new Thresholds(0.8, 0.5));
+	}
+
+	@Test
+	void verifiedIdentityYieldsVerifiedAgent() {
+		Verdict verdict = verdictWithShare(0.95, 0.5, 0.6); // bot-ish behavior, signed
+
+		assertEquals(Thresholds.VERIFIED, verdict.classification());
+	}
+
+	@Test
+	void abusiveBehaviorTrumpsVerifiedIdentity() {
+		Verdict verdict = verdictWithShare(1.0, 0.9, 0.95);
+
+		assertEquals(Thresholds.ABUSIVE, verdict.classification());
+	}
+
+	@Test
+	void partiallySignedSessionIsNotVerified() {
+		Verdict verdict = verdictWithShare(0.5, 0.5, 0.6);
+
+		assertEquals(Thresholds.UNVERIFIED, verdict.classification());
 	}
 }

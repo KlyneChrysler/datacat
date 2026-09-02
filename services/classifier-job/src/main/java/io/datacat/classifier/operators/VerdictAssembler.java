@@ -45,7 +45,8 @@ public final class VerdictAssembler extends KeyedProcessFunction<String, Session
 	@Override
 	public void processElement(SessionFeatures features, Context ctx, Collector<Verdict> out)
 			throws Exception {
-		Verdict verdict = thresholds.verdictFor(features.sessionId(), features.windowEndMillis(), scoreAll(features));
+		Verdict verdict = thresholds.verdictFor(features.sessionId(), features.windowEndMillis(),
+				scoreAll(features), features.verifiedShare());
 		emitIfChanged(verdict, out);
 	}
 

@@ -39,7 +39,8 @@ public final class RequestEventDeserializer implements DeserializationSchema<Req
 				node.path("client_ip").asText(),
 				node.path("user_agent").asText(),
 				node.path("header_order").asText(),
-				node.path("tls_fingerprint").asText());
+				node.path("tls_fingerprint").asText(),
+				node.path("verified_agent").asBoolean(false));
 	}
 
 	@Override

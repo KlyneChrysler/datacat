@@ -20,6 +20,8 @@ services:
       DECISIONS_GROUP: edge-proxy
       # Local-only value; real deployments provide this via a Secret.
       CHALLENGE_SECRET: local-dev-not-a-secret
+      # Public key of traffic-sim's AGENT_KEY_SEED=local-dev-agent-seed.
+      AGENT_KEYS: sim-agent-key=c01fa48a138d8ff55267fd4170832ba27b86f3facdcc49229ab842b3a9308e6d
       LOG_LEVEL: info
     ports:
       - "8080:8080"
@@ -58,6 +60,7 @@ services:
     profiles: ["demo"]
     environment:
       TARGET_URL: http://edge-proxy:8080
+      AGENT_KEY_SEED: local-dev-agent-seed
       LOG_LEVEL: info
     depends_on:
       - edge-proxy

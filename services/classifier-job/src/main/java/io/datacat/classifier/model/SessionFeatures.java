@@ -6,5 +6,5 @@ package io.datacat.classifier.model;
  */
 public record SessionFeatures(String sessionId, long windowEndMillis, long requestCount,
 		double requestsPerMinute, double intervalCv, double pathEntropy, long distinctPaths,
-		String userAgent) {
+		String userAgent, double verifiedShare) {
 }

@@ -9,16 +9,22 @@ import (
 // fast it moves, and how it navigates. Fields are set once; mutable
 // navigation state lives inside its PathSource.
 type Persona struct {
-	Name      string
-	SessionID string
-	UserAgent string
-	BaseDelay time.Duration
-	Jitter    time.Duration // uniform extra delay in [0, Jitter)
-	Paths     PathSource
+	Name       string
+	SessionID  string
+	UserAgent  string
+	BaseDelay  time.Duration
+	Jitter     time.Duration // uniform extra delay in [0, Jitter)
+	Paths      PathSource
+	Credential *AgentCredential // nil: persona does not sign
 }
 
 func (p Persona) NextRequest() Request {
-	return Request{SessionID: p.SessionID, Path: p.Paths.Next(), UserAgent: p.UserAgent}
+	return Request{
+		SessionID:  p.SessionID,
+		Path:       p.Paths.Next(),
+		UserAgent:  p.UserAgent,
+		Credential: p.Credential,
+	}
 }
 
 // NextDelay returns the pause before the next request: BaseDelay plus

@@ -18,9 +18,13 @@ public final class FeatureAccumulator {
 	public ArrayList<String> paths = new ArrayList<>();
 	public String userAgent = "";
 	public long requestCount;
+	public long verifiedCount;
 
 	public FeatureAccumulator add(RequestEvent event) {
 		requestCount++;
+		if (event.verifiedAgent()) {
+			verifiedCount++;
+		}
 		userAgent = event.userAgent();
 		if (timestamps.size() < MAX_SAMPLES) {
 			timestamps.add(event.timestampMillis());
@@ -31,6 +35,7 @@ public final class FeatureAccumulator {
 
 	public FeatureAccumulator merge(FeatureAccumulator other) {
 		requestCount += other.requestCount;
+		verifiedCount += other.verifiedCount;
 		if (!other.userAgent.isEmpty()) {
 			userAgent = other.userAgent;
 		}
