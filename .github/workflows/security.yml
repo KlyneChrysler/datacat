@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [services/edge-proxy, services/enforcement, services/traffic-sim]
+        module: [services/edge-proxy, services/enforcement, services/traffic-sim, services/lite]
     defaults:
       run:
         working-directory: ${{ matrix.module }}

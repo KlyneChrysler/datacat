@@ -3,9 +3,9 @@ name: ci-go
 on:
   push:
     branches: [main]
-    paths: ["pkg/**", "services/edge-proxy/**", "services/enforcement/**", "services/traffic-sim/**", ".github/workflows/ci-go.yml"]
+    paths: ["pkg/**", "services/edge-proxy/**", "services/enforcement/**", "services/traffic-sim/**", "services/lite/**", ".github/workflows/ci-go.yml"]
   pull_request:
-    paths: ["pkg/**", "services/edge-proxy/**", "services/enforcement/**", "services/traffic-sim/**", ".github/workflows/ci-go.yml"]
+    paths: ["pkg/**", "services/edge-proxy/**", "services/enforcement/**", "services/traffic-sim/**", "services/lite/**", ".github/workflows/ci-go.yml"]
 
 jobs:
   verify:
@@ -13,12 +13,16 @@ jobs:
     strategy:
       matrix:
         module:
+          - pkg/edge
           - pkg/events
+          - pkg/guard
           - pkg/httpx
           - pkg/kafkax
+          - pkg/policy
           - pkg/obsx
           - services/edge-proxy
           - services/enforcement
+          - services/lite
           - services/traffic-sim
     defaults:
       run:
