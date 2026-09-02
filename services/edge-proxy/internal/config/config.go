@@ -12,6 +12,9 @@ import (
 type Config struct {
 	Port            string
 	UpstreamURL     *url.URL
+	KafkaBrokers    string
+	RequestsTopic   string
+	EventBufferSize int
 	ShutdownTimeout time.Duration
 }
 
@@ -23,6 +26,9 @@ func Load() (Config, error) {
 	cfg := Config{
 		Port:            os.Getenv("PORT"),
 		UpstreamURL:     upstream,
+		KafkaBrokers:    os.Getenv("KAFKA_BROKERS"),
+		RequestsTopic:   os.Getenv("REQUESTS_TOPIC"),
+		EventBufferSize: 1024,
 		ShutdownTimeout: 10 * time.Second,
 	}
 	return cfg, cfg.validate()
@@ -40,8 +46,14 @@ func parseUpstream(raw string) (*url.URL, error) {
 }
 
 func (c Config) validate() error {
-	if c.Port == "" {
-		return fmt.Errorf("config: PORT is required")
+	for name, v := range map[string]string{
+		"PORT":           c.Port,
+		"KAFKA_BROKERS":  c.KafkaBrokers,
+		"REQUESTS_TOPIC": c.RequestsTopic,
+	} {
+		if v == "" {
+			return fmt.Errorf("config: %s is required", name)
+		}
 	}
 	return nil
 }

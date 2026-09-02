@@ -9,10 +9,18 @@ import (
 	"os/signal"
 	"syscall"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
+	"github.com/KlyneChrysler/datacat/pkg/kafkax"
 	"github.com/KlyneChrysler/datacat/pkg/obsx"
+	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/actions"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/httpapi"
+	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/kafka"
+	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/memory"
+	"github.com/KlyneChrysler/datacat/services/enforcement/internal/app"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/config"
+	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
 )
 
 func main() {
@@ -32,9 +40,18 @@ func run() error {
 	}
 	log := obsx.NewLogger("enforcement")
 
-	router := httpapi.NewRouter(httpapi.New(), log)
-	server := httpx.NewServer(cfg.Port, router, cfg.ShutdownTimeout)
+	consumer, err := kafkax.NewConsumer(cfg.KafkaBrokers, cfg.ConsumerGroup, cfg.VerdictsTopic, log)
+	if err != nil {
+		return err
+	}
 
-	log.Info("starting", "port", cfg.Port)
-	return server.ListenAndServe(ctx)
+	enforcer := app.NewEnforcer(domain.DefaultPolicy(), memory.NewDecisionStore(), actions.NewLogApplier(log))
+	source := kafka.NewVerdictSource(consumer)
+	server := httpx.NewServer(cfg.Port, httpapi.NewRouter(httpapi.New(enforcer, log), log), cfg.ShutdownTimeout)
+
+	log.Info("starting", "port", cfg.Port, "topic", cfg.VerdictsTopic, "group", cfg.ConsumerGroup)
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error { return source.Consume(ctx, enforcer.HandleVerdict) })
+	g.Go(func() error { return server.ListenAndServe(ctx) })
+	return g.Wait()
 }

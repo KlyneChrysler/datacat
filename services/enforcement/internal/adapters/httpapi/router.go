@@ -13,5 +13,6 @@ func NewRouter(h *Handlers, log *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", h.Health)
 	mux.HandleFunc("GET /readyz", h.Ready)
+	mux.HandleFunc("GET /v1/decisions/{sessionID}", h.GetDecision)
 	return httpx.WithMiddleware(mux, httpx.RequestID(), httpx.Logging(log), httpx.Recover(log))
 }
