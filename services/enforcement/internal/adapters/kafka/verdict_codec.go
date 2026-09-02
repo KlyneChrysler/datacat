@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/KlyneChrysler/datacat/pkg/events"
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 // decodeVerdict converts one wire verdict into its domain form.

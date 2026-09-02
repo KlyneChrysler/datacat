@@ -19,8 +19,8 @@ func TestGatekeeperReturnsLatestDecision(t *testing.T) {
 func TestGatekeeperAllowsUnknownSessions(t *testing.T) {
 	gk := NewGatekeeper(time.Hour)
 
-	if got := gk.ActionFor("stranger"); got != "allow" {
-		t.Fatalf("action = %q, want allow", got)
+	if got := gk.ActionFor("stranger"); got != "" {
+		t.Fatalf("action = %q, want empty", got)
 	}
 }
 
@@ -30,7 +30,7 @@ func TestGatekeeperExpiresOldDecisions(t *testing.T) {
 
 	time.Sleep(5 * time.Millisecond)
 
-	if got := gk.ActionFor("s-1"); got != "allow" {
-		t.Fatalf("action = %q, want allow after expiry", got)
+	if got := gk.ActionFor("s-1"); got != "" {
+		t.Fatalf("action = %q, want empty after expiry", got)
 	}
 }

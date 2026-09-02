@@ -1,0 +1,20 @@
+name: ci-docker
+
+on:
+  push:
+    branches: [main]
+    paths: ["pkg/**", "services/**", ".github/workflows/ci-docker.yml"]
+  pull_request:
+    paths: ["pkg/**", "services/**", ".github/workflows/ci-docker.yml"]
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [edge-proxy, enforcement, traffic-sim, lite]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f services/${{ matrix.service }}/Dockerfile -t datacat/${{ matrix.service }}:ci .
+      - run: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      - run: trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed datacat/${{ matrix.service }}:ci

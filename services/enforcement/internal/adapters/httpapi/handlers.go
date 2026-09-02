@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/app"
 )
 
@@ -18,16 +18,6 @@ type Handlers struct {
 
 func New(enforcer *app.Enforcer, log *slog.Logger) *Handlers {
 	return &Handlers{enforcer: enforcer, log: log}
-}
-
-// Health answers the liveness probe.
-func (h *Handlers) Health(w http.ResponseWriter, _ *http.Request) {
-	httpx.JSON(w, http.StatusOK, map[string]string{"status": "alive"})
-}
-
-// Ready answers the readiness probe.
-func (h *Handlers) Ready(w http.ResponseWriter, _ *http.Request) {
-	httpx.JSON(w, http.StatusOK, map[string]string{"status": "ready"})
 }
 
 // GetTrafficSummary serves classification counts for a recent window.

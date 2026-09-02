@@ -1,6 +1,6 @@
 package httpapi
 
-import policy "github.com/KlyneChrysler/datacat/pkg/policy"
+import "github.com/KlyneChrysler/datacat/pkg/policy"
 
 // Domain to wire conversion.
 

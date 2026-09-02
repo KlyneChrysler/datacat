@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 func TestTallyCountsWithinWindow(t *testing.T) {

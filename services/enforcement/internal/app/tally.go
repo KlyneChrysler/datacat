@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 // tallyBuckets is one hour of minute buckets, the largest summary window.

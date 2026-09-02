@@ -24,18 +24,18 @@ func (g *Gatekeeper) Update(sessionID, action string) {
 	g.byID[sessionID] = gateEntry{action: action, savedAt: time.Now()}
 }
 
-// ActionFor returns the standing action, allowing unknown or expired sessions.
+// ActionFor returns the standing action, empty for unknown or expired sessions.
 func (g *Gatekeeper) ActionFor(sessionID string) string {
 	g.mu.RLock()
 	entry, ok := g.byID[sessionID]
 	g.mu.RUnlock()
 
 	if !ok {
-		return "allow"
+		return ""
 	}
 	if time.Since(entry.savedAt) > g.ttl {
 		g.forget(sessionID)
-		return "allow"
+		return ""
 	}
 
 	return entry.action

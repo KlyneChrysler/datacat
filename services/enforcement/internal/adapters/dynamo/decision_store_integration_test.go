@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 const itTable = "it-datacat-decisions"

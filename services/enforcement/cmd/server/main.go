@@ -13,7 +13,7 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
 	"github.com/KlyneChrysler/datacat/pkg/kafkax"
 	"github.com/KlyneChrysler/datacat/pkg/obsx"
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/actions"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/dynamo"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/httpapi"

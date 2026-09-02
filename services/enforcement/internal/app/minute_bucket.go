@@ -1,6 +1,6 @@
 package app
 
-import policy "github.com/KlyneChrysler/datacat/pkg/policy"
+import "github.com/KlyneChrysler/datacat/pkg/policy"
 
 // minuteBucket is the stored counts for one absolute minute.
 type minuteBucket struct {

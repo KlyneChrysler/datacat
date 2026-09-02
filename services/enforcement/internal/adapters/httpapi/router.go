@@ -11,8 +11,8 @@ import (
 // NewRouter wires routes and middleware, empty corsOrigin disables cors.
 func NewRouter(h *Handlers, log *slog.Logger, corsOrigin string) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", h.Health)
-	mux.HandleFunc("GET /readyz", h.Ready)
+	mux.HandleFunc("GET /healthz", httpx.Alive)
+	mux.HandleFunc("GET /readyz", httpx.Ready)
 	mux.HandleFunc("GET /v1/decisions/{sessionID}", h.GetDecision)
 	mux.HandleFunc("GET /v1/traffic/summary", h.GetTrafficSummary)
 

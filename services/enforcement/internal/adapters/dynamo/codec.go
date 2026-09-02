@@ -3,7 +3,7 @@ package dynamo
 import (
 	"time"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 // Domain to storage conversion.

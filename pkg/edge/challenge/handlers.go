@@ -33,6 +33,12 @@ func New(challenger *guard.Challenger, log *slog.Logger) *Handlers {
 	return &Handlers{challenger: challenger, log: log}
 }
 
+// Mount registers the challenge routes on mux.
+func (h *Handlers) Mount(mux *http.ServeMux) {
+	mux.HandleFunc("GET "+PagePath, h.Page)
+	mux.HandleFunc("POST "+PagePath+"/verify", h.Verify)
+}
+
 // Page serves the interstitial with a fresh session bound token.
 func (h *Handlers) Page(w http.ResponseWriter, r *http.Request) {
 	data := pageData{

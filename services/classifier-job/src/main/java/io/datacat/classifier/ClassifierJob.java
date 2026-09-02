@@ -9,12 +9,16 @@ import io.datacat.classifier.model.SessionFeatures;
 import io.datacat.classifier.model.Thresholds;
 import io.datacat.classifier.model.Verdict;
 import io.datacat.classifier.operators.FeatureWindowFunction;
+import io.datacat.classifier.operators.LateEventLogger;
 import io.datacat.classifier.operators.SessionFeatureAggregator;
 import io.datacat.classifier.operators.VerdictAssembler;
 import io.datacat.classifier.signals.Scorers;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.util.OutputTag;
 
 import java.time.Duration;
 
@@ -29,11 +33,16 @@ public final class ClassifierJob {
 		StreamExecutionEnvironment env = Environments.checkpointed(config);
 
 		DataStream<RequestEvent> events = Sources.requestEvents(env, config);
+		OutputTag<RequestEvent> lateEvents = new OutputTag<>("late-request-events") {
+		};
 
-		DataStream<SessionFeatures> features = events
+		SingleOutputStreamOperator<SessionFeatures> features = events
 				.keyBy(RequestEvent::sessionId)
 				.window(SlidingEventTimeWindows.of(Duration.ofSeconds(config.windowSeconds()), Duration.ofSeconds(config.slideSeconds())))
+				.sideOutputLateData(lateEvents)
 				.aggregate(new SessionFeatureAggregator(), new FeatureWindowFunction(config.windowSeconds()));
+
+		features.getSideOutput(lateEvents).process(new LateEventLogger()).sinkTo(new DiscardingSink<>());
 
 		DataStream<Verdict> verdicts = features
 				.keyBy(SessionFeatures::sessionId)

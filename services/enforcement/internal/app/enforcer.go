@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 

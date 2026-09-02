@@ -1,6 +1,6 @@
 package classify
 
-import policy "github.com/KlyneChrysler/datacat/pkg/policy"
+import "github.com/KlyneChrysler/datacat/pkg/policy"
 
 const (
 	humanBelow         = 0.45

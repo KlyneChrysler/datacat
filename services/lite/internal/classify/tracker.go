@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 const (

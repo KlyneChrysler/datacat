@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/KlyneChrysler/datacat/pkg/guard"
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/lite/internal/classify"
 )
 

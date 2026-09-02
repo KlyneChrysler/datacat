@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/KlyneChrysler/datacat/pkg/events"
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 // encodeDecision converts one domain decision into its wire form.

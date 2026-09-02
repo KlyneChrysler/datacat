@@ -12,6 +12,7 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/edge/ident"
 	"github.com/KlyneChrysler/datacat/pkg/guard"
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 // Gate holds the collaborators every gating step needs.
@@ -45,12 +46,12 @@ func (g *Gate) Middleware() httpx.Middleware {
 // deny refuses the request when its action requires that.
 func (g *Gate) deny(w http.ResponseWriter, r *http.Request, action, sessionID string) bool {
 	switch action {
-	case "block":
-		g.refuse(w, r, sessionID, "request blocked", http.StatusForbidden, "session blocked")
+	case string(policy.Block):
+		g.refuse(w, r, sessionID, refusal{event: "request blocked", status: http.StatusForbidden, message: "session blocked"})
 		return true
-	case "challenge":
+	case string(policy.Challenge):
 		return g.denyUncleared(w, r, sessionID)
-	case "rate_limit":
+	case string(policy.RateLimit):
 		return g.denyOverLimit(w, r, sessionID)
 	default:
 		return false
@@ -69,7 +70,7 @@ func (g *Gate) denyUncleared(w http.ResponseWriter, r *http.Request, sessionID s
 		return true
 	}
 
-	g.refuse(w, r, sessionID, "request challenged", http.StatusTooManyRequests, "verification required")
+	g.refuse(w, r, sessionID, refusal{event: "request challenged", status: http.StatusTooManyRequests, message: "verification required"})
 	return true
 }
 
@@ -79,14 +80,14 @@ func (g *Gate) denyOverLimit(w http.ResponseWriter, r *http.Request, sessionID s
 		return false
 	}
 
-	g.refuse(w, r, sessionID, "request rate limited", http.StatusTooManyRequests, "rate limit exceeded")
+	g.refuse(w, r, sessionID, refusal{event: "request rate limited", status: http.StatusTooManyRequests, message: "rate limit exceeded"})
 	return true
 }
 
-func (g *Gate) refuse(w http.ResponseWriter, r *http.Request, sessionID, event string, status int, message string) {
-	g.log.InfoContext(r.Context(), event, "session_id", sessionID, "path", r.URL.Path)
+func (g *Gate) refuse(w http.ResponseWriter, r *http.Request, sessionID string, ref refusal) {
+	g.log.InfoContext(r.Context(), ref.event, "session_id", sessionID, "path", r.URL.Path)
 
-	httpx.Error(w, status, message)
+	httpx.Error(w, ref.status, ref.message)
 }
 
 func (g *Gate) hasClearance(r *http.Request, sessionID string) bool {

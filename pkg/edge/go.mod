@@ -17,3 +17,7 @@ replace (
 	github.com/KlyneChrysler/datacat/pkg/httpx => ../httpx
 	github.com/KlyneChrysler/datacat/pkg/obsx => ../obsx
 )
+
+require github.com/KlyneChrysler/datacat/pkg/policy v0.0.0
+
+replace github.com/KlyneChrysler/datacat/pkg/policy => ../policy

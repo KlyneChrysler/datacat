@@ -16,7 +16,7 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/guard"
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
 	"github.com/KlyneChrysler/datacat/pkg/obsx"
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/lite/internal/adapters/watch"
 	"github.com/KlyneChrysler/datacat/services/lite/internal/app"
 	"github.com/KlyneChrysler/datacat/services/lite/internal/classify"
@@ -59,14 +59,9 @@ func newRouter(cfg config.Config, analyzer *app.Analyzer, traffic *gate.Gate, ch
 	verification := challenge.New(challenger, log)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-		httpx.JSON(w, http.StatusOK, map[string]string{"status": "alive"})
-	})
-	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) {
-		httpx.JSON(w, http.StatusOK, map[string]string{"status": "ready"})
-	})
-	mux.HandleFunc("GET "+challenge.PagePath, verification.Page)
-	mux.HandleFunc("POST "+challenge.PagePath+"/verify", verification.Verify)
+	mux.HandleFunc("GET /healthz", httpx.Alive)
+	mux.HandleFunc("GET /readyz", httpx.Ready)
+	verification.Mount(mux)
 	mux.Handle("/", proxied)
 
 	return httpx.WithMiddleware(mux, httpx.RequestID(), httpx.Logging(log), httpx.Recover(log))

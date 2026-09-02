@@ -5,7 +5,7 @@ import (
 	"context"
 	"log/slog"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 

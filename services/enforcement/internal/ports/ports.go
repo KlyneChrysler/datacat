@@ -4,7 +4,7 @@ package ports
 import (
 	"context"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 type DecisionStore interface {

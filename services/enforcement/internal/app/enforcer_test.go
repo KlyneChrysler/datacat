@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 var errBoom = errors.New("boom")

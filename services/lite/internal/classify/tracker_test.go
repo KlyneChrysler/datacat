@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	policy "github.com/KlyneChrysler/datacat/pkg/policy"
+	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 func drive(t *testing.T, tracker *Tracker, session, ua string, gap time.Duration, n int, verified bool) (policy.Verdict, bool) {
