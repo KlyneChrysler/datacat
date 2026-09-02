@@ -60,4 +60,22 @@ datacat/
 
 ## Status
 
-**Phase 0 — standards.** `docs/standards/` is the contract for all code in this repo. No application code is written until it complies. Read [docs/standards/README.md](docs/standards/README.md) first.
+**The full loop works locally.** Traffic through the proxy becomes Kafka
+events; the Flink job classifies sessions on behavior (timing regularity,
+request rate, path entropy, user agent) and identity (Ed25519 trusted-agent
+signatures); enforcement turns verdicts into decisions; the gate applies
+them — block (403), challenge (proof-of-work interstitial with signed
+clearances), rate-limit (per-session token buckets), allow. The dashboard
+charts classifications live. Terraform provisions the (local) infrastructure;
+Helm charts deploy to kind; CI gates every push.
+
+Try it: `docker compose up -d`, submit the classifier jar to the Flink
+cluster (see `deploy/k8s/README.md` and compose comments), then
+`docker compose --profile demo up traffic-sim` and watch the scraper get
+caught.
+
+Still ahead: the AWS phase (EKS/MSK/DynamoDB via the Terraform staging env),
+TLS fingerprinting, and true wire-order header capture.
+
+`docs/standards/` is the contract for all code in this repo — read
+[docs/standards/README.md](docs/standards/README.md) before contributing.
