@@ -10,16 +10,11 @@ import (
 // Gatekeeper holds the latest enforcement decision per session, fed by the
 // decisions topic and consulted on the hot request path. Entries expire so a
 // session that stops misbehaving is eventually forgiven and memory stays
-// bounded; expiry is checked lazily on read.
+// bounded; expiry is checked lazily on read. All operations are O(1).
 type Gatekeeper struct {
 	ttl  time.Duration
 	mu   sync.RWMutex
 	byID map[string]gateEntry
-}
-
-type gateEntry struct {
-	action  string
-	savedAt time.Time
 }
 
 func NewGatekeeper(ttl time.Duration) *Gatekeeper {

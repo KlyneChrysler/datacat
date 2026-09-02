@@ -1,11 +1,14 @@
 # datacat Code Standards
 
-This directory is the contract for every line of code in this repository. If code
-conflicts with these documents, the code is wrong.
+This directory is the contract for every line of code in this repository.
+The contract is unforgiving: a violation is a defect, regardless of whether
+the code works, and "it's small" or "it's related" is never a defense. If
+code conflicts with these documents, the code is wrong.
 
 | Document | Covers |
 |---|---|
-| [twelve-factor.md](twelve-factor.md) | How datacat implements all 12 factors of https://12factor.net — binding, not aspirational |
+| [twelve-factor.md](twelve-factor.md) | How datacat implements all 12 factors of https://12factor.net — binding |
+| [performance.md](performance.md) | The Big-O and allocation discipline — binding, hot paths are unforgiving |
 | [go.md](go.md) | Go services: layout, hexagonal layers, config, errors, HTTP, concurrency, testing |
 | [java.md](java.md) | Spring Boot service and Flink job: OOP, DI, JPA, operators, checkpoints |
 | [react.md](react.md) | Dashboard SPA: structure, components, hooks, server state |
@@ -16,62 +19,94 @@ conflicts with these documents, the code is wrong.
 ### 1. One task per unit
 
 Every function/method does exactly one thing. Two responsibilities means two
-functions. The test: you can name it without "and".
+functions — always, immediately, not "when it grows". The test: you can name
+it without "and". Depth of extraction is never an argument against
+extraction; layers of small, named units are the goal, not a cost.
 
-### 2. Orchestrators delegate, leaves compute
+### 2. One kind per file (file taxonomy)
 
-Two kinds of functions exist, and each has its own budget:
+Every declaration has a KIND, and a file holds exactly one kind, serving
+exactly one purpose. A declaration of a different kind than the file's
+purpose MUST move to its own file — exported or unexported, large or small.
+"It's only used here" and "it's related" do not exempt it.
 
-- **Orchestrators** coordinate a use case. Every line delegates to a named step.
-  They read like prose. No inline computation, no nested conditionals.
-- **Leaves** do the actual work. Target ≤ 15 lines, hard cap 30. A leaf that
-  outgrows its budget gets split, and the split parts get extracted.
+The kinds, and where each lives:
 
-Do not shred leaves into one-liners for their own sake — a computation that
-belongs together stays together, capped at 30 lines.
+| Kind | Examples | Lives in |
+|---|---|---|
+| Domain concept | `Verdict`, `Decision`, `Classification` | one file per concept in `domain/` (model layer) |
+| Wire shape / DTO | `decisionResponse`, request records, event schemas | its own shapes file (`responses.go`, `*_dto`, schema file) — never inside behavior files |
+| Interface / port | `DecisionStore`, `SignalScorer` | the ports/interface file of its consumer |
+| Mapper / codec | `toDecisionResponse`, `decodeVerdict`, `eventFrom` | its own mapper/codec file — conversion is a kind, not a helper |
+| Behavior / implementation | handlers, stores, middleware flows, operators | one implementation per file, named after it |
+| Configuration | config shape, env loading | config files — shape and loading in separate files |
+| Errors | sentinel errors, error types | the errors file of the layer |
+| Registry / constants | `Scorers.all()`, action tables | its own registry file |
+| Wiring | composition roots, routers, module calls | `main`, router, env roots — wiring only, nothing else |
 
-### 3. Hexagonal layers, one-way dependencies
+The single exception: a private leaf function that is a *step of the file's
+one task and the same kind* stays (e.g. a `deny` step inside the gate
+middleware). The moment a private function does conversion, defines a shape,
+or serves another purpose, it is a different kind and moves. There is no
+"unexported" loophole anywhere in these standards.
+
+### 3. Orchestrators delegate, leaves compute
+
+- **Orchestrators** coordinate a use case. Every line delegates to a named
+  step. No inline computation, no nested conditionals. No exceptions.
+- **Leaves** do the work: ≤ 15 lines target, 30 the absolute cap. A leaf at
+  16 lines gets split before merge, not after.
+
+### 4. Hexagonal layers, one-way dependencies
 
 ```
 domain/     pure business logic, zero framework/infra imports
 ports/      interfaces only — "what I need", not "how it's done"
 app/        use cases (the orchestrators)
-adapters/   Kafka, DynamoDB, HTTP, filesystem — implementations of ports
+adapters/   Kafka, DynamoDB, HTTP — implementations of ports
 ```
 
-Dependency rule: `adapters → ports → domain`. Never the reverse. Domain code
-must compile and unit-test with zero infrastructure.
+Dependency rule: `adapters → ports → domain`, never the reverse. Domain
+code MUST compile and unit-test with zero infrastructure. One infra import
+in `domain/` is a defect, not a shortcut.
 
-### 4. Dependency injection everywhere
+### 5. Dependency injection everywhere
 
-All collaborators arrive through the constructor. No globals, no singletons, no
-service locators, no `init()` side effects. The composition root (`main.go`,
-Spring context, React entry) is the ONLY place where concrete types meet.
+All collaborators arrive through the constructor. No globals, no
+singletons, no service locators, no `init()` side effects. Concrete types
+meet ONLY in composition roots (`main.go`, Spring context, `main.jsx`,
+Terraform env roots).
 
-### 5. Small interfaces, defined at the consumer
+### 6. Small interfaces, defined at the consumer
 
-Interfaces have 1–3 methods and live next to the code that *uses* them, not the
-code that implements them. This is what keeps everything swappable.
+Interfaces have 1–3 methods and live with the code that *uses* them.
+A 4-method interface requires a written justification in its doc comment;
+5 is the cap.
 
-### 6. Immutability by default
+### 7. Immutability by default
 
-Domain objects are immutable. Transformations return new values. Mutation is
-permitted only inside a single function's local scope or where the language
-idiom demands it (documented per-language).
+Domain objects are immutable. Transformations return new values. Mutation
+is permitted only inside a single function's local scope or where the
+language idiom demands it (documented per language, per case).
 
-### 7. Extract helpers into dedicated packages — on the second use
+### 8. Extraction is mandatory, duplication is forbidden
 
-Shared logic lives in `pkg/` (Go), `common` packages (Java), `lib/` (React).
-Extraction is mandatory when a function does two things or when a second caller
-appears. Do NOT pre-build abstractions for imagined callers (YAGNI).
+Shared logic lives in the shared layer (`pkg/` in Go, common packages in
+Java, `lib/` in React). A generic helper inside a service is a defect: if
+it is generic, it belongs to the shared layer; if it is not generic, it
+must be named for its specific task. The second copy of any logic is a
+build-stopping defect. (YAGNI still bounds *speculative* abstraction: do
+not build for imagined callers — but organizing existing code by kind is
+never speculative.)
 
-### 8. Errors are handled, wrapped, and never swallowed
+### 9. Errors are handled, wrapped, and never swallowed
 
-Every error is either handled meaningfully or propagated with added context.
-Empty catch blocks and `_ = err` are forbidden. User-facing surfaces return
-friendly messages; logs carry the detail.
+Every error is handled meaningfully or propagated with added context.
+Empty catch blocks, `_ = err`, and log-and-forget on errors that matter
+are defects. An intentionally ignored error carries a comment saying why,
+every time.
 
-### 9. Size budgets
+### 10. Size budgets — caps, not suggestions
 
 | Unit | Target | Hard cap |
 |---|---|---|
@@ -79,29 +114,38 @@ friendly messages; logs carry the detail.
 | File | 200–400 lines | 800 lines |
 | React component | 100 lines | 150 lines |
 | Interface | 1–3 methods | 5 methods |
-| Function parameters | ≤ 3 | 5 (then introduce a struct/record) |
+| Function parameters | ≤ 3 | 5 (then introduce a shape) |
 | Nesting depth | 2 | 4 |
 
-### 10. Tests are part of the definition of done
+Exceeding a hard cap blocks the merge. Exceeding a target requires the
+split to be the next edit in the same change.
+
+### 11. Performance is a standard, not an afterthought
+
+[performance.md](performance.md) is binding. Hot paths are O(1)/O(log n)
+per item with no avoidable allocations; accidental quadratic behavior is a
+defect anywhere; every super-linear function carries a complexity comment.
+
+### 12. Tests are part of the definition of done
 
 - TDD for `domain/` and `app/` layers: test first, red, green, refactor.
 - Table-driven tests (Go), slice tests (Spring), Testing Library (React).
 - Coverage floor: 80% on domain and app layers.
-- Tests use hand-written fakes implementing ports — not mocking frameworks —
-  except where the ecosystem idiom is otherwise (documented per-language).
+- Fakes are hand-written implementations of ports (Go); Mockito is the
+  Java idiom; MSW at the fetch boundary in React.
+- Adapters get integration tests against local containers.
 
-### 11. Naming
+### 13. Naming
 
-- Names say what, types say how. `verdictStore`, not `dynamoClient2`.
-- Booleans read as predicates: `isVerified`, `hasExpired`.
-- Packages/modules are nouns, functions are verbs, no abbreviations that
-  aren't industry-standard (ID, URL, TLS are fine).
-- One exported concept per file; the file is named after it.
+- Names say what, types say how. Booleans read as predicates.
+- Packages/modules are nouns, functions are verbs; no invented
+  abbreviations (industry-standard ID, URL, TLS are fine).
+- One concept per file and the file is named after it — see rule 2.
 
-### 12. Git
+### 14. Git
 
 - Commits: `<type>: <description>` — lowercase imperative, ≤ 72 chars.
   Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`.
 - Branches: `<author>/<ticket>-<description>`.
 - Every PR: Goal, Summary, Design decisions, Edge cases, Files changed, Test plan.
-- No secrets in the repo, ever. Pre-commit scan enforced in CI.
+- No secrets in the repo, ever. gitleaks gates every push.

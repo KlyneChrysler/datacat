@@ -45,11 +45,7 @@ func run() error {
 		return err
 	}
 	defer producer.Close()
-	// Every proxy replica must see EVERY decision (broadcast), so each
-	// instance gets its own consumer group - a shared group would split
-	// decisions across replicas. A fresh instance replays the retained
-	// topic, rebuilding its gate state on startup.
-	consumer, err := kafkax.NewConsumer(cfg.KafkaBrokers, instanceGroup(cfg.DecisionsGroup), cfg.DecisionsTopic, log)
+	consumer, err := kafkax.NewConsumer(cfg.KafkaBrokers, cfg.InstanceDecisionsGroup(), cfg.DecisionsTopic, log)
 	if err != nil {
 		return err
 	}
@@ -66,14 +62,6 @@ func run() error {
 	g.Go(func() error { return decisions.Consume(ctx, gatekeeper.Update) })
 	g.Go(func() error { return server.ListenAndServe(ctx) })
 	return g.Wait()
-}
-
-func instanceGroup(base string) string {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return base
-	}
-	return base + "-" + hostname
 }
 
 // newRouter wires the traffic path: observe first (blocked requests are

@@ -4,6 +4,7 @@ go 1.26
 
 require (
 	github.com/KlyneChrysler/datacat/pkg/events v0.0.0-00010101000000-000000000000
+	github.com/KlyneChrysler/datacat/pkg/hashx v0.0.0-00010101000000-000000000000
 	github.com/KlyneChrysler/datacat/pkg/httpx v0.0.0
 	github.com/KlyneChrysler/datacat/pkg/kafkax v0.0.0-00010101000000-000000000000
 	github.com/KlyneChrysler/datacat/pkg/obsx v0.0.0
@@ -26,3 +27,5 @@ replace (
 	github.com/KlyneChrysler/datacat/pkg/events => ../../pkg/events
 	github.com/KlyneChrysler/datacat/pkg/kafkax => ../../pkg/kafkax
 )
+
+replace github.com/KlyneChrysler/datacat/pkg/hashx => ../../pkg/hashx

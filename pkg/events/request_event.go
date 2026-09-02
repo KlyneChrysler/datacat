@@ -1,6 +1,6 @@
 // Package events is the single source of truth for event schemas flowing
 // through Kafka. Every producer and consumer (Go services, Flink job via
-// mirrored Java POJOs) must match these shapes exactly.
+// mirrored Java types) must match these shapes exactly. One schema per file.
 package events
 
 import "time"
@@ -16,22 +16,4 @@ type RequestEvent struct {
 	UserAgent      string    `json:"user_agent"`
 	HeaderOrder    string    `json:"header_order"`    // hash of header names in wire order
 	TLSFingerprint string    `json:"tls_fingerprint"` // e.g. JA4, empty if unavailable
-}
-
-// Verdict is emitted by classifier-job for every classification change.
-// Partition key: SessionID.
-type Verdict struct {
-	SessionID      string    `json:"session_id"`
-	Timestamp      time.Time `json:"timestamp"`
-	Classification string    `json:"classification"` // human | verified_agent | unverified_automation | abusive
-	Confidence     float64   `json:"confidence"`     // [0,1]
-}
-
-// Decision is emitted by enforcement after applying policy to a verdict;
-// edge-proxy consumes it to gate traffic. Partition key: SessionID.
-type Decision struct {
-	SessionID      string    `json:"session_id"`
-	Timestamp      time.Time `json:"timestamp"`
-	Classification string    `json:"classification"`
-	Action         string    `json:"action"` // allow | challenge | rate_limit | block
 }

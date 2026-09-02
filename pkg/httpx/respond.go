@@ -6,14 +6,6 @@ import (
 	"net/http"
 )
 
-// envelope is the single response shape for every datacat API
-// (see docs/standards/go.md and react.md — the dashboard unwraps this).
-type envelope struct {
-	OK    bool   `json:"ok"`
-	Data  any    `json:"data,omitempty"`
-	Error string `json:"error,omitempty"`
-}
-
 func JSON(w http.ResponseWriter, status int, data any) {
 	write(w, status, envelope{OK: true, Data: data})
 }

@@ -42,13 +42,3 @@ func (h *Handlers) GetDecision(w http.ResponseWriter, r *http.Request) {
 		httpx.JSON(w, http.StatusOK, toDecisionResponse(decision))
 	}
 }
-
-type decisionResponse struct {
-	SessionID string `json:"session_id"`
-	Class     string `json:"classification"`
-	Action    string `json:"action"`
-}
-
-func toDecisionResponse(d domain.Decision) decisionResponse {
-	return decisionResponse{SessionID: d.SessionID, Class: string(d.Class), Action: string(d.Action)}
-}

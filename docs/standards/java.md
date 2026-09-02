@@ -28,6 +28,22 @@ and `domain`; never the reverse. `domain` imports no Spring, no JPA annotations
 where avoidable (persistence entities live in `infrastructure` and map to/from
 domain objects).
 
+## File taxonomy (rule 2, Java form) — unforgiving
+
+Java's one-public-type-per-file rule is the floor, not the ceiling:
+
+- Request/response records (wire shapes) each get their own file in `api/`;
+  a record nested inside a controller is a defect.
+- Mappers between layers (`RuleResponse.from` is the shape's own factory
+  and stays; anything converting *between two other types* becomes a
+  dedicated mapper class).
+- Generic helpers (env readers, parsing utilities) become their own final
+  utility class (`Env`), never private statics inside a shape or behavior
+  class.
+- Registries (`Scorers.all()`) are their own class; adding an entry never
+  touches behavior files.
+- Private methods that are steps of the class's single task and kind stay.
+
 ## Configuration (factor III) — typed, validated at startup
 
 No `@Value` scattered through classes. One immutable record per concern:

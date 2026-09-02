@@ -4,21 +4,21 @@
 package ident
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"net"
 	"net/http"
+
+	"github.com/KlyneChrysler/datacat/pkg/hashx"
 )
 
 const SessionCookie = "dc_session"
 
 // SessionID prefers the session cookie; without one it falls back to a
-// fingerprint of IP + User-Agent so anonymous traffic still groups.
+// fingerprint of IP + User-Agent so anonymous traffic still groups. O(1).
 func SessionID(r *http.Request) string {
 	if cookie, err := r.Cookie(SessionCookie); err == nil && cookie.Value != "" {
 		return cookie.Value
 	}
-	return ShortHash(ClientIP(r) + "|" + r.UserAgent())
+	return hashx.Short(ClientIP(r) + "|" + r.UserAgent())
 }
 
 func ClientIP(r *http.Request) string {
@@ -27,9 +27,4 @@ func ClientIP(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return host
-}
-
-func ShortHash(s string) string {
-	sum := sha256.Sum256([]byte(s))
-	return hex.EncodeToString(sum[:8])
 }

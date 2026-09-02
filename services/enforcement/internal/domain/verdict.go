@@ -1,14 +1,4 @@
-// Package domain holds pure business logic. It imports zero infrastructure.
 package domain
-
-type Classification string
-
-const (
-	Human       Classification = "human"
-	VerifiedBot Classification = "verified_agent"
-	Unverified  Classification = "unverified_automation"
-	Abusive     Classification = "abusive"
-)
 
 // Verdict is immutable: constructed once, never mutated. "Changes" return a
 // new value (see WithClass).

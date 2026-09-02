@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
-	"github.com/KlyneChrysler/datacat/pkg/events"
 	"github.com/KlyneChrysler/datacat/pkg/kafkax"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
@@ -26,18 +24,9 @@ func NewDecisionPublisher(producer *kafkax.Producer, topic string) *DecisionPubl
 }
 
 func (p *DecisionPublisher) PublishDecision(ctx context.Context, d domain.Decision) error {
-	payload, err := json.Marshal(toWire(d))
+	payload, err := json.Marshal(encodeDecision(d))
 	if err != nil {
 		return fmt.Errorf("marshal decision: %w", err)
 	}
 	return p.producer.Publish(ctx, p.topic, []byte(d.SessionID), payload)
-}
-
-func toWire(d domain.Decision) events.Decision {
-	return events.Decision{
-		SessionID:      d.SessionID,
-		Timestamp:      time.Now().UTC(),
-		Classification: string(d.Class),
-		Action:         string(d.Action),
-	}
 }

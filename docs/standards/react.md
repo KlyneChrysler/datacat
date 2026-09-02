@@ -30,6 +30,16 @@ Rules mirror the backend: a feature folder is a hexagonal cell — `*Api.js` is
 its adapter, hooks are its application layer, components are its presentation.
 Cross-feature imports go through `components/`, `hooks/`, or `lib/` only.
 
+## File taxonomy (rule 2, React form) — unforgiving
+
+- One component per file, named after it. A second component defined in the
+  same file — however small — is a defect.
+- Error classes, envelope/unwrap logic, and URL helpers are separate kinds
+  from the client that uses them: `lib/apiError.js`, `lib/envelope.js`,
+  `lib/url.js` — never inline in `apiClient.js`.
+- Data fetching lives only in hooks; formatting/pure helpers only in `lib/`;
+  a `fetch` or a date-format function inside a component file is a defect.
+
 ## The three-layer split inside a feature
 
 **1. Adapter — the only place that knows HTTP:**

@@ -21,8 +21,45 @@ services/enforcement/
 └── go.mod                    each service is its own module
 ```
 
-Shared code lives in `pkg/` at repo root (`events`, `kafkax`, `httpx`, `obsx`)
-and is imported like any third-party module. `internal/` is never shared.
+Shared code lives in `pkg/` at repo root (`events`, `kafkax`, `httpx`, `obsx`,
+`hashx`) and is imported like any third-party module. `internal/` is never
+shared. A generic helper written inside a service is a defect — it moves to
+`pkg/`.
+
+## File taxonomy (rule 2, Go form) — unforgiving
+
+Within every package, one kind per file:
+
+```
+internal/domain/          one concept per file:
+  classification.go         Classification + its constants
+  verdict.go                Verdict + its constructor and methods
+  action.go / decision.go / policy.go
+  errors.go                 sentinel errors only
+internal/adapters/httpapi/
+  router.go                 wiring only
+  handlers.go               behavior only — NO type declarations
+  responses.go              wire shapes only
+  mapper.go                 domain → wire conversion only
+internal/adapters/kafka/
+  verdict_source.go         behavior (consume loop bridging)
+  verdict_codec.go          wire ↔ domain conversion only
+internal/config/
+  config.go                 the Config shape and derived accessors
+  load.go                   env reading, parsing, validation
+```
+
+Binding consequences, no exceptions for unexported names:
+
+- A `struct` with JSON/dynamodbav tags inside a behavior file is a defect —
+  wire and storage shapes get shapes files.
+- A function converting between two representations (`toX`, `decodeX`,
+  `eventFrom`) is a mapper/codec and gets a mapper/codec file, even with a
+  single caller.
+- Private state shapes supporting one type (`gateEntry`) still get their
+  own file: shapes are a kind.
+- Private leaf steps of the file's single task and kind stay
+  (`deny` inside the gate middleware, `shutdown` inside the server).
 
 ## Config — factor III, validated at startup
 

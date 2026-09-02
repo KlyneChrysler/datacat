@@ -2,7 +2,8 @@ package io.datacat.classifier.config;
 
 /**
  * All job parameters come from the environment (twelve-factor III) and are
- * validated here; a missing variable fails the job at submission, not mid-run.
+ * validated here; a missing variable fails the job at submission, not
+ * mid-run. The record owns its invariants; generic env reading lives in Env.
  */
 public record JobConfig(String kafkaBrokers, String requestsTopic, String verdictsTopic,
 		String consumerGroup, String checkpointUri, long checkpointIntervalMs,
@@ -23,11 +24,11 @@ public record JobConfig(String kafkaBrokers, String requestsTopic, String verdic
 				System.getenv("KAFKA_BROKERS"),
 				System.getenv("REQUESTS_TOPIC"),
 				System.getenv("VERDICTS_TOPIC"),
-				stringFromEnv("CONSUMER_GROUP", "classifier"),
+				Env.string("CONSUMER_GROUP", "classifier"),
 				System.getenv("CHECKPOINT_URI"),
-				longFromEnv("CHECKPOINT_INTERVAL_MS", 30_000L),
-				longFromEnv("WINDOW_SECONDS", 300L),
-				longFromEnv("SLIDE_SECONDS", 30L));
+				Env.longValue("CHECKPOINT_INTERVAL_MS", 30_000L),
+				Env.longValue("WINDOW_SECONDS", 300L),
+				Env.longValue("SLIDE_SECONDS", 30L));
 	}
 
 	private static void require(String value, String name) {
@@ -40,15 +41,5 @@ public record JobConfig(String kafkaBrokers, String requestsTopic, String verdic
 		if (value <= 0) {
 			throw new IllegalStateException("config: " + name + " must be positive");
 		}
-	}
-
-	private static String stringFromEnv(String name, String fallback) {
-		String raw = System.getenv(name);
-		return raw == null || raw.isBlank() ? fallback : raw;
-	}
-
-	private static long longFromEnv(String name, long fallback) {
-		String raw = System.getenv(name);
-		return raw == null || raw.isBlank() ? fallback : Long.parseLong(raw);
 	}
 }
