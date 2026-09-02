@@ -16,5 +16,9 @@ type Config struct {
 	DecisionsGroup  string
 	EventBufferSize int
 	GateTTL         time.Duration
-	ShutdownTimeout time.Duration
+	// Token bucket for sessions under a rate_limit decision. Optional envs
+	// RATE_LIMIT_PER_MINUTE / RATE_LIMIT_BURST override the defaults.
+	RateLimitPerMinute int
+	RateLimitBurst     int
+	ShutdownTimeout    time.Duration
 }

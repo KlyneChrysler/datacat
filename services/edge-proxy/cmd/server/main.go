@@ -53,8 +53,9 @@ func run() error {
 	publisher := kafka.NewEventPublisher(producer, cfg.RequestsTopic)
 	recorder := app.NewRecorder(publisher, log, cfg.EventBufferSize)
 	gatekeeper := app.NewGatekeeper(cfg.GateTTL)
+	limiter := app.NewRateLimiter(cfg.RateLimitPerMinute, cfg.RateLimitBurst, cfg.GateTTL)
 	decisions := kafka.NewDecisionSource(consumer)
-	server := httpx.NewServer(cfg.Port, newRouter(cfg, recorder, gatekeeper, log), cfg.ShutdownTimeout)
+	server := httpx.NewServer(cfg.Port, newRouter(cfg, recorder, gatekeeper, limiter, log), cfg.ShutdownTimeout)
 
 	log.Info("starting", "port", cfg.Port, "upstream", cfg.UpstreamURL.String(), "topic", cfg.RequestsTopic)
 	g, ctx := errgroup.WithContext(ctx)
@@ -68,9 +69,9 @@ func run() error {
 // signal too), then the gate, then the upstream proxy. Health endpoints stay
 // outside both.
 func newRouter(cfg config.Config, recorder *app.Recorder, gatekeeper *app.Gatekeeper,
-	log *slog.Logger) http.Handler {
+	limiter *app.RateLimiter, log *slog.Logger) http.Handler {
 	traffic := httpx.WithMiddleware(proxy.New(cfg.UpstreamURL, log),
-		observe.Middleware(recorder), gate.Middleware(gatekeeper, log))
+		observe.Middleware(recorder), gate.Middleware(gatekeeper, limiter, log))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
