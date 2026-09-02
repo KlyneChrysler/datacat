@@ -1,7 +1,9 @@
 # Java Standards (policy-service, classifier-job)
 
-Java 21 language level (Flink's supported ceiling governs; verify at scaffold —
-local JDK 24 can compile with `--release 21`). Full OOP here: this is where
+Toolchains (verified at scaffold, 2026-09): policy-service on Java 21
+(Spring Boot 4.x), classifier-job on Java 17 (Flink 2.2.1 ships
+`flink:*-java17` images). Gradle's foojay resolver auto-provisions both.
+Full OOP here: this is where
 class design, DI containers, and polymorphism are the idiom. Gradle with
 version catalogs; Spotless + Checkstyle + Error Prone are CI gates.
 
@@ -325,14 +327,18 @@ public final class VerdictAssembler extends KeyedProcessFunction<String, Session
 ## Checkpointing — non-negotiable settings
 
 ```java
-// config/Environments.java
+// config/Environments.java — Flink 2.x API (verified against 2.2.1):
+// checkpoint storage is set via Configuration, not CheckpointConfig.
 public static StreamExecutionEnvironment checkpointed(JobConfig config) {
-	StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+	Configuration conf = new Configuration();
+	conf.set(CheckpointingOptions.CHECKPOINT_STORAGE, "filesystem");
+	conf.set(CheckpointingOptions.CHECKPOINTS_DIRECTORY, config.checkpointUri()); // s3://… in AWS, file://… locally
+
+	StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(conf);
 	env.enableCheckpointing(config.checkpointIntervalMs(), CheckpointingMode.EXACTLY_ONCE);
-	CheckpointConfig cp = env.getCheckpointConfig();
-	cp.setCheckpointStorage(config.checkpointUri()); // s3://... in AWS, file:// locally
-	cp.setMinPauseBetweenCheckpoints(config.checkpointIntervalMs() / 2);
-	cp.setExternalizedCheckpointRetention(RETAIN_ON_CANCELLATION);
+	env.getCheckpointConfig().setMinPauseBetweenCheckpoints(config.checkpointIntervalMs() / 2);
+	env.getCheckpointConfig()
+			.setExternalizedCheckpointRetention(ExternalizedCheckpointRetention.RETAIN_ON_CANCELLATION);
 	return env;
 }
 ```

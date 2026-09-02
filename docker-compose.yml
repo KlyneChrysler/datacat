@@ -1,0 +1,84 @@
+# Local development stack (twelve-factor X: dev/prod parity). Same images and
+# env-var contract as EKS; only the values differ. Usage: docker compose up
+services:
+  # The protected demo application traffic flows to.
+  whoami:
+    image: traefik/whoami:latest
+    ports:
+      - "8090:80"
+
+  edge-proxy:
+    build:
+      context: .
+      dockerfile: services/edge-proxy/Dockerfile
+    environment:
+      PORT: "8080"
+      UPSTREAM_URL: http://whoami:80
+      LOG_LEVEL: info
+    ports:
+      - "8080:8080"
+    depends_on:
+      - whoami
+
+  enforcement:
+    build:
+      context: .
+      dockerfile: services/enforcement/Dockerfile
+    environment:
+      PORT: "8081"
+      LOG_LEVEL: info
+    ports:
+      - "8081:8081"
+
+  redpanda:
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
+    ports:
+      - "19092:19092"
+
+  redpanda-console:
+    image: redpandadata/console:latest
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "8085:8080"
+    depends_on:
+      - redpanda
+
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8000:8000"
+
+  localstack:
+    image: localstack/localstack:latest
+    environment:
+      SERVICES: s3,lambda,stepfunctions,iam
+    ports:
+      - "4566:4566"
+
+  # Keep this tag in sync with flinkVersion in services/classifier-job/build.gradle.kts
+  flink-jobmanager:
+    image: flink:2.2.1-java17
+    command: jobmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+    ports:
+      - "8086:8081"
+
+  flink-taskmanager:
+    image: flink:2.2.1-java17
+    command: taskmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 4
+    depends_on:
+      - flink-jobmanager

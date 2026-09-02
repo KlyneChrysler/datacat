@@ -1,0 +1,34 @@
+name: ci-go
+
+on:
+  push:
+    branches: [main]
+    paths: ["pkg/**", "services/edge-proxy/**", "services/enforcement/**", "services/traffic-sim/**", ".github/workflows/ci-go.yml"]
+  pull_request:
+    paths: ["pkg/**", "services/edge-proxy/**", "services/enforcement/**", "services/traffic-sim/**", ".github/workflows/ci-go.yml"]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - pkg/events
+          - pkg/httpx
+          - pkg/kafkax
+          - pkg/obsx
+          - services/edge-proxy
+          - services/enforcement
+          - services/traffic-sim
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+      - run: gofmt -l . && test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test -race -cover ./...
+      - run: go build ./...

@@ -1,0 +1,27 @@
+name: ci-web
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/dashboard/**", ".github/workflows/ci-web.yml"]
+  pull_request:
+    paths: ["web/dashboard/**", ".github/workflows/ci-web.yml"]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/dashboard/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          VITE_API_BASE_URL: http://localhost:8081

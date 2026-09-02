@@ -50,6 +50,9 @@ Code that violates the standards is wrong even if it works.
 
 ## Toolchain (verified on this machine, 2026-09)
 
-Go 1.26.3 · Java 24 (compile with `--release 21` for Flink compat — verify at
-scaffold) · Node 25 · Docker 29 · Terraform 1.15 · kubectl 1.34.
-Not yet installed: kind, helm — install at scaffold phase.
+Go 1.26.3 · Node 25 · Docker 29 · Terraform 1.15 · kubectl 1.34 · kind · helm
+· Gradle 9 with foojay resolver auto-provisioning JDK toolchains:
+policy-service = Java 21 (Spring Boot 4.1.1), classifier-job = Java 17
+(Flink 2.2.1, matching the `flink:2.2.1-java17` image in docker-compose.yml).
+Flink 2.x API note: checkpoint storage is configured via `Configuration` +
+`CheckpointingOptions`, not `CheckpointConfig.setCheckpointStorage` (removed).
