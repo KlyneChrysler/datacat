@@ -6,8 +6,10 @@ image:
   # Never for kind-loaded local images; ECR digests in AWS envs.
   pullPolicy: Never
 
-# Non-secret env (factor III) rendered into the ConfigMap. Secrets, when they
-# exist, go into the <name>-secrets Secret - never here.
+# Non-secret env (factor III) rendered into the ConfigMap. Secrets go into
+# the edge-proxy-secrets Secret - never here. CHALLENGE_SECRET is required:
+#   kubectl -n datacat create secret generic edge-proxy-secrets \
+#     --from-literal=CHALLENGE_SECRET=$(openssl rand -hex 32)
 env:
   PORT: "8080"
   UPSTREAM_URL: http://whoami:80

@@ -17,17 +17,19 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg := Config{
-		Port:               os.Getenv("PORT"),
-		UpstreamURL:        upstream,
-		KafkaBrokers:       os.Getenv("KAFKA_BROKERS"),
-		RequestsTopic:      os.Getenv("REQUESTS_TOPIC"),
-		DecisionsTopic:     os.Getenv("DECISIONS_TOPIC"),
-		DecisionsGroup:     os.Getenv("DECISIONS_GROUP"),
-		EventBufferSize:    1024,
-		GateTTL:            time.Hour,
-		RateLimitPerMinute: envx.Int("RATE_LIMIT_PER_MINUTE", 60),
-		RateLimitBurst:     envx.Int("RATE_LIMIT_BURST", 10),
-		ShutdownTimeout:    10 * time.Second,
+		Port:                os.Getenv("PORT"),
+		UpstreamURL:         upstream,
+		KafkaBrokers:        os.Getenv("KAFKA_BROKERS"),
+		RequestsTopic:       os.Getenv("REQUESTS_TOPIC"),
+		DecisionsTopic:      os.Getenv("DECISIONS_TOPIC"),
+		DecisionsGroup:      os.Getenv("DECISIONS_GROUP"),
+		EventBufferSize:     1024,
+		GateTTL:             time.Hour,
+		RateLimitPerMinute:  envx.Int("RATE_LIMIT_PER_MINUTE", 60),
+		RateLimitBurst:      envx.Int("RATE_LIMIT_BURST", 10),
+		ChallengeSecret:     os.Getenv("CHALLENGE_SECRET"),
+		ChallengeDifficulty: envx.Int("CHALLENGE_DIFFICULTY_BITS", 16),
+		ShutdownTimeout:     10 * time.Second,
 	}
 	return cfg, validate(cfg)
 }
@@ -45,11 +47,12 @@ func parseUpstream(raw string) (*url.URL, error) {
 
 func validate(c Config) error {
 	for name, v := range map[string]string{
-		"PORT":            c.Port,
-		"KAFKA_BROKERS":   c.KafkaBrokers,
-		"REQUESTS_TOPIC":  c.RequestsTopic,
-		"DECISIONS_TOPIC": c.DecisionsTopic,
-		"DECISIONS_GROUP": c.DecisionsGroup,
+		"PORT":             c.Port,
+		"KAFKA_BROKERS":    c.KafkaBrokers,
+		"REQUESTS_TOPIC":   c.RequestsTopic,
+		"DECISIONS_TOPIC":  c.DecisionsTopic,
+		"DECISIONS_GROUP":  c.DecisionsGroup,
+		"CHALLENGE_SECRET": c.ChallengeSecret,
 	} {
 		if v == "" {
 			return fmt.Errorf("config: %s is required", name)

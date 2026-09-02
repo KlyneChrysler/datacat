@@ -12,6 +12,10 @@ import (
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/app"
 )
 
+func testChallenger() *app.Challenger {
+	return app.NewChallenger("test-secret", 4)
+}
+
 func gatedHandler(t *testing.T, action string, burst int) http.Handler {
 	t.Helper()
 	gatekeeper := app.NewGatekeeper(time.Hour)
@@ -22,12 +26,22 @@ func gatedHandler(t *testing.T, action string, burst int) http.Handler {
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	return Middleware(gatekeeper, limiter, obsx.NewLogger("test"))(next)
+	return Middleware(gatekeeper, limiter, testChallenger(), obsx.NewLogger("test"))(next)
 }
 
-func send(handler http.Handler) int {
+func send(handler http.Handler, extras ...*http.Cookie) int {
+	return sendWith(handler, "", extras...)
+}
+
+func sendWith(handler http.Handler, accept string, extras ...*http.Cookie) int {
 	r := httptest.NewRequest(http.MethodGet, "/products", nil)
 	r.AddCookie(&http.Cookie{Name: ident.SessionCookie, Value: "s-1"})
+	for _, cookie := range extras {
+		r.AddCookie(cookie)
+	}
+	if accept != "" {
+		r.Header.Set("Accept", accept)
+	}
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, r)
 	return w.Code
@@ -40,7 +54,7 @@ func TestGate(t *testing.T) {
 		wantStatus int
 	}{
 		{name: "blocked session gets 403", action: "block", wantStatus: http.StatusForbidden},
-		{name: "challenged session gets 429", action: "challenge", wantStatus: http.StatusTooManyRequests},
+		{name: "challenged api client gets 429", action: "challenge", wantStatus: http.StatusTooManyRequests},
 		{name: "allowed session passes", action: "allow", wantStatus: http.StatusOK},
 		{name: "rate limited session passes within burst", action: "rate_limit", wantStatus: http.StatusOK},
 		{name: "unknown session passes", action: "", wantStatus: http.StatusOK},
@@ -64,5 +78,33 @@ func TestGateThrottlesRateLimitedSessionBeyondBurst(t *testing.T) {
 	}
 	if third != http.StatusTooManyRequests {
 		t.Errorf("request beyond burst = %d, want 429", third)
+	}
+}
+
+func TestGateRedirectsChallengedBrowsersToInterstitial(t *testing.T) {
+	handler := gatedHandler(t, "challenge", 3)
+
+	if got := sendWith(handler, "text/html,application/xhtml+xml"); got != http.StatusFound {
+		t.Errorf("status = %d, want 302 redirect to challenge page", got)
+	}
+}
+
+func TestGatePassesChallengedSessionWithValidClearance(t *testing.T) {
+	gatekeeper := app.NewGatekeeper(time.Hour)
+	gatekeeper.Update(events.Decision{SessionID: "s-1", Action: "challenge"})
+	challenger := testChallenger()
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	handler := Middleware(gatekeeper, app.NewRateLimiter(60, 3, time.Hour), challenger,
+		obsx.NewLogger("test"))(next)
+	clearance := &http.Cookie{Name: app.ClearanceCookie, Value: challenger.MintClearance("s-1", time.Now())}
+
+	if got := send(handler, clearance); got != http.StatusOK {
+		t.Errorf("status = %d, want 200 for cleared session", got)
+	}
+	forged := &http.Cookie{Name: app.ClearanceCookie, Value: "forged"}
+	if got := send(handler, forged); got != http.StatusTooManyRequests {
+		t.Errorf("status = %d, want 429 for forged clearance", got)
 	}
 }

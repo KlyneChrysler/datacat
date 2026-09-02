@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Checking your browser</title>
+	<style>
+		body { font: 16px/1.5 system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; margin: 0; background: #fcfcfb; color: #0b0b0b; }
+		@media (prefers-color-scheme: dark) { body { background: #1a1a19; color: #ffffff; } }
+		main { text-align: center; padding: 24px; }
+		.spinner { width: 28px; height: 28px; margin: 16px auto; border: 3px solid #f0efec; border-top-color: #2a78d6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+		@keyframes spin { to { transform: rotate(360deg); } }
+	</style>
+</head>
+<body>
+<main>
+	<h1>Checking your browser</h1>
+	<p>This takes a moment and requires no action.</p>
+	<div class="spinner"></div>
+</main>
+<script>
+	const token = {{.Token}};
+	const difficulty = {{.Difficulty}};
+	const returnTo = {{.ReturnTo}};
+
+	function leadingZeroBits(bytes) {
+		let bits = 0;
+		for (const b of bytes) {
+			if (b === 0) { bits += 8; continue; }
+			for (let mask = 0x80; mask > 0 && (b & mask) === 0; mask >>= 1) bits++;
+			break;
+		}
+		return bits;
+	}
+
+	async function solve() {
+		const enc = new TextEncoder();
+		for (let nonce = 0; ; nonce++) {
+			const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(token + ":" + nonce)));
+			if (leadingZeroBits(digest) >= difficulty) return String(nonce);
+			if (nonce % 2000 === 0) await new Promise((r) => setTimeout(r));
+		}
+	}
+
+	(async () => {
+		const nonce = await solve();
+		const resp = await fetch("/__datacat/challenge/verify", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ token, nonce }),
+		});
+		if (resp.ok) location.replace(returnTo);
+	})();
+</script>
+</body>
+</html>

@@ -18,6 +18,8 @@ services:
       REQUESTS_TOPIC: datacat.requests
       DECISIONS_TOPIC: datacat.decisions
       DECISIONS_GROUP: edge-proxy
+      # Local-only value; real deployments provide this via a Secret.
+      CHALLENGE_SECRET: local-dev-not-a-secret
       LOG_LEVEL: info
     ports:
       - "8080:8080"
