@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/app"
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
 )
 
 type Handlers struct {
@@ -44,7 +44,7 @@ func (h *Handlers) GetDecision(w http.ResponseWriter, r *http.Request) {
 	decision, err := h.enforcer.Lookup(r.Context(), sessionID)
 
 	switch {
-	case errors.Is(err, domain.ErrDecisionNotFound):
+	case errors.Is(err, policy.ErrDecisionNotFound):
 		httpx.Error(w, http.StatusNotFound, "no decision for session")
 	case err != nil:
 		httpx.InternalError(w, r, h.log, err)

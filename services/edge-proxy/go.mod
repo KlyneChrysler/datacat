@@ -3,9 +3,11 @@ module github.com/KlyneChrysler/datacat/services/edge-proxy
 go 1.26
 
 require (
+	github.com/KlyneChrysler/datacat/pkg/edge v0.0.0-00010101000000-000000000000
 	github.com/KlyneChrysler/datacat/pkg/envx v0.0.0-00010101000000-000000000000
-	github.com/KlyneChrysler/datacat/pkg/events v0.0.0-00010101000000-000000000000
-	github.com/KlyneChrysler/datacat/pkg/hashx v0.0.0-00010101000000-000000000000
+	github.com/KlyneChrysler/datacat/pkg/events v0.0.0
+	github.com/KlyneChrysler/datacat/pkg/guard v0.0.0
+	github.com/KlyneChrysler/datacat/pkg/hashx v0.0.0
 	github.com/KlyneChrysler/datacat/pkg/httpx v0.0.0
 	github.com/KlyneChrysler/datacat/pkg/kafkax v0.0.0-00010101000000-000000000000
 	github.com/KlyneChrysler/datacat/pkg/obsx v0.0.0
@@ -32,3 +34,8 @@ replace (
 replace github.com/KlyneChrysler/datacat/pkg/hashx => ../../pkg/hashx
 
 replace github.com/KlyneChrysler/datacat/pkg/envx => ../../pkg/envx
+
+replace (
+	github.com/KlyneChrysler/datacat/pkg/edge => ../../pkg/edge
+	github.com/KlyneChrysler/datacat/pkg/guard => ../../pkg/guard
+)

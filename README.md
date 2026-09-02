@@ -108,6 +108,25 @@ docker compose --profile demo up traffic-sim
 docker compose down
 ```
 
+### Lite mode, one binary and nothing else
+
+No Kafka, no Flink, no cluster. The same gate, challenge page, rate limiter,
+and agent verification, with the classifier running in process. Catches the
+obvious automation in seconds:
+
+```bash
+docker compose --profile lite up lite whoami
+curl -A "python-requests/2.32" -b dc_session=me localhost:8070/x
+```
+
+Repeat that curl quickly and watch it go 200, then 429, then 403. Or run it
+straight from source against your own app:
+
+```bash
+cd services/lite
+PORT=8070 UPSTREAM_URL=http://localhost:3000 CHALLENGE_SECRET=$(openssl rand -hex 32) go run ./cmd/lite
+```
+
 ## Credentials needed
 
 No external accounts or paid services are required for the local setup.

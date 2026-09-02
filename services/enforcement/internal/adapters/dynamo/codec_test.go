@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 func TestCodecRoundTrip(t *testing.T) {
-	decision := domain.Decision{SessionID: "s-1", Class: domain.Abusive, Action: domain.Block}
+	decision := policy.Decision{SessionID: "s-1", Class: policy.Abusive, Action: policy.Block}
 	now := time.Unix(1_000_000, 0)
 
 	rec := encodeDecision(decision, now, time.Hour)
@@ -24,7 +24,7 @@ func TestCodecRoundTrip(t *testing.T) {
 
 func TestExpiredEnforcesTTLOnRead(t *testing.T) {
 	now := time.Unix(1_000_000, 0)
-	rec := encodeDecision(domain.Decision{SessionID: "s-1"}, now, time.Hour)
+	rec := encodeDecision(policy.Decision{SessionID: "s-1"}, now, time.Hour)
 
 	if expired(rec, now.Add(59*time.Minute)) {
 		t.Error("record expired before its TTL")

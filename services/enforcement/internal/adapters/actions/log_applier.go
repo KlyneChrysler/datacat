@@ -5,7 +5,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
@@ -19,7 +19,7 @@ func NewLogApplier(log *slog.Logger) *LogApplier {
 	return &LogApplier{log: log}
 }
 
-func (a *LogApplier) Apply(ctx context.Context, d domain.Decision) error {
+func (a *LogApplier) Apply(ctx context.Context, d policy.Decision) error {
 	a.log.InfoContext(ctx, "decision applied", "session_id", d.SessionID, "class", d.Class, "action", d.Action)
 
 	return nil

@@ -5,25 +5,25 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
 // Enforcer turns verdicts into stored, published, applied decisions.
 type Enforcer struct {
-	policy    domain.Policy
+	policy    policy.Policy
 	store     ports.DecisionStore
 	publisher ports.DecisionPublisher
 	applier   ports.ActionApplier
 	tally     *Tally
 }
 
-func NewEnforcer(policy domain.Policy, store ports.DecisionStore, publisher ports.DecisionPublisher, applier ports.ActionApplier, tally *Tally) *Enforcer {
+func NewEnforcer(policy policy.Policy, store ports.DecisionStore, publisher ports.DecisionPublisher, applier ports.ActionApplier, tally *Tally) *Enforcer {
 	return &Enforcer{policy: policy, store: store, publisher: publisher, applier: applier, tally: tally}
 }
 
 // HandleVerdict runs the full decision pipeline for one verdict.
-func (e *Enforcer) HandleVerdict(ctx context.Context, v domain.Verdict) error {
+func (e *Enforcer) HandleVerdict(ctx context.Context, v policy.Verdict) error {
 	e.tally.Record(v.Class)
 	decision := e.policy.Decide(v)
 
@@ -40,10 +40,10 @@ func (e *Enforcer) HandleVerdict(ctx context.Context, v domain.Verdict) error {
 	return nil
 }
 
-func (e *Enforcer) Lookup(ctx context.Context, sessionID string) (domain.Decision, error) {
+func (e *Enforcer) Lookup(ctx context.Context, sessionID string) (policy.Decision, error) {
 	return e.store.FindBySession(ctx, sessionID)
 }
 
-func (e *Enforcer) TrafficSummary(windowMinutes int) domain.TrafficSummary {
+func (e *Enforcer) TrafficSummary(windowMinutes int) policy.TrafficSummary {
 	return e.tally.Summary(windowMinutes)
 }

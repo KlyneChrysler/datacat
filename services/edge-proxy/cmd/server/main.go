@@ -11,15 +11,17 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/KlyneChrysler/datacat/pkg/edge/agentauth"
+	"github.com/KlyneChrysler/datacat/pkg/edge/challenge"
+	"github.com/KlyneChrysler/datacat/pkg/edge/gate"
+	"github.com/KlyneChrysler/datacat/pkg/edge/proxy"
+	"github.com/KlyneChrysler/datacat/pkg/events"
+	"github.com/KlyneChrysler/datacat/pkg/guard"
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
 	"github.com/KlyneChrysler/datacat/pkg/kafkax"
 	"github.com/KlyneChrysler/datacat/pkg/obsx"
-	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/agentauth"
-	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/challenge"
-	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/gate"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/kafka"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/observe"
-	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/proxy"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/app"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/config"
 )
@@ -52,9 +54,9 @@ func run() error {
 	}
 
 	recorder := app.NewRecorder(kafka.NewEventPublisher(producer, cfg.RequestsTopic), log, cfg.EventBufferSize)
-	gatekeeper := app.NewGatekeeper(cfg.GateTTL)
-	limiter := app.NewRateLimiter(cfg.RateLimitPerMinute, cfg.RateLimitBurst, cfg.GateTTL)
-	challenger := app.NewChallenger(cfg.ChallengeSecret, cfg.ChallengeDifficulty)
+	gatekeeper := guard.NewGatekeeper(cfg.GateTTL)
+	limiter := guard.NewRateLimiter(cfg.RateLimitPerMinute, cfg.RateLimitBurst, cfg.GateTTL)
+	challenger := guard.NewChallenger(cfg.ChallengeSecret, cfg.ChallengeDifficulty)
 	traffic := gate.New(gatekeeper, limiter, challenger, log)
 	decisions := kafka.NewDecisionSource(consumer)
 	server := httpx.NewServer(cfg.Port, newRouter(cfg, recorder, traffic, challenger, log), cfg.ShutdownTimeout)
@@ -63,15 +65,17 @@ func run() error {
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return recorder.Run(ctx) })
-	g.Go(func() error { return decisions.Consume(ctx, gatekeeper.Update) })
+	g.Go(func() error {
+		return decisions.Consume(ctx, func(d events.Decision) { gatekeeper.Update(d.SessionID, d.Action) })
+	})
 	g.Go(func() error { return server.ListenAndServe(ctx) })
 
 	return g.Wait()
 }
 
 // newRouter wires the traffic path, health and challenge stay outside the gate.
-func newRouter(cfg config.Config, recorder *app.Recorder, traffic *gate.Gate, challenger *app.Challenger, log *slog.Logger) http.Handler {
-	agentCheck := agentauth.Middleware(app.NewAgentVerifier(cfg.AgentKeys))
+func newRouter(cfg config.Config, recorder *app.Recorder, traffic *gate.Gate, challenger *guard.Challenger, log *slog.Logger) http.Handler {
+	agentCheck := agentauth.Middleware(guard.NewAgentVerifier(cfg.AgentKeys))
 	proxied := httpx.WithMiddleware(proxy.New(cfg.UpstreamURL, log), agentCheck, observe.Middleware(recorder), traffic.Middleware())
 	verification := challenge.New(challenger, log)
 

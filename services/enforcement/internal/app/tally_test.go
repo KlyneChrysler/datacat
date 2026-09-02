@@ -4,16 +4,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 func TestTallyCountsWithinWindow(t *testing.T) {
 	tally := NewTally()
 	now := time.Unix(6_000_000, 0)
 
-	tally.recordAt(domain.Human, now)
-	tally.recordAt(domain.Human, now.Add(-2*time.Minute))
-	tally.recordAt(domain.Abusive, now)
+	tally.recordAt(policy.Human, now)
+	tally.recordAt(policy.Human, now.Add(-2*time.Minute))
+	tally.recordAt(policy.Abusive, now)
 
 	summary := tally.summaryAt(15, now)
 
@@ -26,8 +26,8 @@ func TestTallyExcludesEventsOutsideWindow(t *testing.T) {
 	tally := NewTally()
 	now := time.Unix(6_000_000, 0)
 
-	tally.recordAt(domain.Abusive, now.Add(-20*time.Minute))
-	tally.recordAt(domain.Human, now)
+	tally.recordAt(policy.Abusive, now.Add(-20*time.Minute))
+	tally.recordAt(policy.Human, now)
 
 	summary := tally.summaryAt(15, now)
 
@@ -40,8 +40,8 @@ func TestTallyRingSlotReuseResetsStaleCounts(t *testing.T) {
 	tally := NewTally()
 	now := time.Unix(6_000_000, 0)
 
-	tally.recordAt(domain.Human, now.Add(-time.Duration(tallyBuckets)*time.Minute))
-	tally.recordAt(domain.Abusive, now) // same ring slot, one hour later
+	tally.recordAt(policy.Human, now.Add(-time.Duration(tallyBuckets)*time.Minute))
+	tally.recordAt(policy.Abusive, now) // same ring slot, one hour later
 
 	summary := tally.summaryAt(tallyBuckets, now)
 
@@ -53,7 +53,7 @@ func TestTallyRingSlotReuseResetsStaleCounts(t *testing.T) {
 func TestTallyClampsWindow(t *testing.T) {
 	tally := NewTally()
 	now := time.Unix(6_000_000, 0)
-	tally.recordAt(domain.Unverified, now)
+	tally.recordAt(policy.Unverified, now)
 
 	if got := tally.summaryAt(500, now).WindowMinutes; got != tallyBuckets {
 		t.Errorf("window = %d, want clamped to %d", got, tallyBuckets)
@@ -67,7 +67,7 @@ func TestTallyCountsUnknownClassAsOther(t *testing.T) {
 	tally := NewTally()
 	now := time.Unix(6_000_000, 0)
 
-	tally.recordAt(domain.Classification("mystery"), now)
+	tally.recordAt(policy.Classification("mystery"), now)
 
 	if summary := tally.summaryAt(5, now); summary.Other != 1 || summary.Total != 1 {
 		t.Errorf("summary = %+v, want other=1 total=1", summary)

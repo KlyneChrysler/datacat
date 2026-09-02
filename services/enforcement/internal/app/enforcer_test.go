@@ -5,53 +5,53 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 var errBoom = errors.New("boom")
 
 type fakeStore struct {
-	saved []domain.Decision
+	saved []policy.Decision
 	err   error
 }
 
-func (f *fakeStore) Save(_ context.Context, d domain.Decision) error {
+func (f *fakeStore) Save(_ context.Context, d policy.Decision) error {
 	f.saved = append(f.saved, d)
 	return f.err
 }
 
-func (f *fakeStore) FindBySession(_ context.Context, sessionID string) (domain.Decision, error) {
+func (f *fakeStore) FindBySession(_ context.Context, sessionID string) (policy.Decision, error) {
 	for _, d := range f.saved {
 		if d.SessionID == sessionID {
 			return d, nil
 		}
 	}
-	return domain.Decision{}, domain.ErrDecisionNotFound
+	return policy.Decision{}, policy.ErrDecisionNotFound
 }
 
 type fakeApplier struct {
-	applied []domain.Decision
+	applied []policy.Decision
 	err     error
 }
 
-func (f *fakeApplier) Apply(_ context.Context, d domain.Decision) error {
+func (f *fakeApplier) Apply(_ context.Context, d policy.Decision) error {
 	f.applied = append(f.applied, d)
 	return f.err
 }
 
 type fakePublisher struct {
-	published []domain.Decision
+	published []policy.Decision
 	err       error
 }
 
-func (f *fakePublisher) PublishDecision(_ context.Context, d domain.Decision) error {
+func (f *fakePublisher) PublishDecision(_ context.Context, d policy.Decision) error {
 	f.published = append(f.published, d)
 	return f.err
 }
 
-func abusiveVerdict(t *testing.T) domain.Verdict {
+func abusiveVerdict(t *testing.T) policy.Verdict {
 	t.Helper()
-	verdict, err := domain.NewVerdict("s-1", domain.Abusive, 0.95)
+	verdict, err := policy.NewVerdict("s-1", policy.Abusive, 0.95)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,10 +64,10 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 		storeErr   error
 		publishErr error
 		applierErr error
-		wantAction domain.Action
+		wantAction policy.Action
 		wantErr    bool
 	}{
-		{name: "abusive session gets blocked", wantAction: domain.Block},
+		{name: "abusive session gets blocked", wantAction: policy.Block},
 		{name: "store failure propagates", storeErr: errBoom, wantErr: true},
 		{name: "publish failure propagates", publishErr: errBoom, wantErr: true},
 		{name: "applier failure propagates", applierErr: errBoom, wantErr: true},
@@ -77,7 +77,7 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 			store := &fakeStore{err: tt.storeErr}
 			publisher := &fakePublisher{err: tt.publishErr}
 			applier := &fakeApplier{err: tt.applierErr}
-			enforcer := NewEnforcer(domain.DefaultPolicy(), store, publisher, applier, NewTally())
+			enforcer := NewEnforcer(policy.DefaultPolicy(), store, publisher, applier, NewTally())
 
 			err := enforcer.HandleVerdict(context.Background(), abusiveVerdict(t))
 
@@ -97,7 +97,7 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 
 func TestEnforcerLookupReturnsStoredDecision(t *testing.T) {
 	store := &fakeStore{}
-	enforcer := NewEnforcer(domain.DefaultPolicy(), store, &fakePublisher{}, &fakeApplier{}, NewTally())
+	enforcer := NewEnforcer(policy.DefaultPolicy(), store, &fakePublisher{}, &fakeApplier{}, NewTally())
 	if err := enforcer.HandleVerdict(context.Background(), abusiveVerdict(t)); err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestEnforcerLookupReturnsStoredDecision(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if decision.Action != domain.Block {
+	if decision.Action != policy.Block {
 		t.Errorf("action = %s, want block", decision.Action)
 	}
 }

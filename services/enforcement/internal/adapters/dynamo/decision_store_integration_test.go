@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 const itTable = "it-datacat-decisions"
@@ -53,7 +53,7 @@ func createTableIfMissing(t *testing.T, ctx context.Context, client *dynamodb.Cl
 
 func TestSaveAndFindBySession(t *testing.T) {
 	store := itStore(t)
-	decision := domain.Decision{SessionID: "it-s1", Class: domain.Abusive, Action: domain.Block}
+	decision := policy.Decision{SessionID: "it-s1", Class: policy.Abusive, Action: policy.Block}
 
 	if err := store.Save(context.Background(), decision); err != nil {
 		t.Fatal(err)
@@ -73,15 +73,15 @@ func TestFindUnknownSessionReturnsNotFound(t *testing.T) {
 
 	_, err := store.FindBySession(context.Background(), "it-nobody")
 
-	if !errors.Is(err, domain.ErrDecisionNotFound) {
+	if !errors.Is(err, policy.ErrDecisionNotFound) {
 		t.Fatalf("err = %v, want ErrDecisionNotFound", err)
 	}
 }
 
 func TestSaveOverwritesPreviousDecision(t *testing.T) {
 	store := itStore(t)
-	first := domain.Decision{SessionID: "it-s2", Class: domain.Unverified, Action: domain.Challenge}
-	second := domain.Decision{SessionID: "it-s2", Class: domain.Abusive, Action: domain.Block}
+	first := policy.Decision{SessionID: "it-s2", Class: policy.Unverified, Action: policy.Challenge}
+	second := policy.Decision{SessionID: "it-s2", Class: policy.Abusive, Action: policy.Block}
 
 	if err := store.Save(context.Background(), first); err != nil {
 		t.Fatal(err)
@@ -94,7 +94,7 @@ func TestSaveOverwritesPreviousDecision(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if found.Action != domain.Block {
+	if found.Action != policy.Block {
 		t.Errorf("action = %s, want block (latest wins)", found.Action)
 	}
 }

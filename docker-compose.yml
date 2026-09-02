@@ -53,6 +53,22 @@ services:
     depends_on:
       - redpanda
 
+  # Single binary mode, no Kafka or Flink: docker compose --profile lite up lite whoami
+  lite:
+    build:
+      context: .
+      dockerfile: services/lite/Dockerfile
+    profiles: ["lite"]
+    environment:
+      PORT: "8070"
+      UPSTREAM_URL: http://whoami:80
+      CHALLENGE_SECRET: local-dev-not-a-secret
+      LOG_LEVEL: info
+    ports:
+      - "8070:8070"
+    depends_on:
+      - whoami
+
   # Opt-in demo load: docker compose --profile demo up traffic-sim
   traffic-sim:
     build:

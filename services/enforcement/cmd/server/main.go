@@ -13,6 +13,7 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/httpx"
 	"github.com/KlyneChrysler/datacat/pkg/kafkax"
 	"github.com/KlyneChrysler/datacat/pkg/obsx"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/actions"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/dynamo"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/httpapi"
@@ -20,7 +21,6 @@ import (
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/memory"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/app"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/config"
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
@@ -56,7 +56,7 @@ func run() error {
 	}
 
 	publisher := kafka.NewDecisionPublisher(producer, cfg.DecisionsTopic)
-	enforcer := app.NewEnforcer(domain.DefaultPolicy(), store, publisher, actions.NewLogApplier(log), app.NewTally())
+	enforcer := app.NewEnforcer(policy.DefaultPolicy(), store, publisher, actions.NewLogApplier(log), app.NewTally())
 	source := kafka.NewVerdictSource(consumer)
 	router := httpapi.NewRouter(httpapi.New(enforcer, log), log, cfg.CORSOrigin)
 	server := httpx.NewServer(cfg.Port, router, cfg.ShutdownTimeout)

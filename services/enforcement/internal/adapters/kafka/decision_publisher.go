@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/KlyneChrysler/datacat/pkg/kafkax"
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
@@ -22,7 +22,7 @@ func NewDecisionPublisher(producer *kafkax.Producer, topic string) *DecisionPubl
 	return &DecisionPublisher{producer: producer, topic: topic}
 }
 
-func (p *DecisionPublisher) PublishDecision(ctx context.Context, d domain.Decision) error {
+func (p *DecisionPublisher) PublishDecision(ctx context.Context, d policy.Decision) error {
 	payload, err := json.Marshal(encodeDecision(d))
 	if err != nil {
 		return fmt.Errorf("marshal decision: %w", err)

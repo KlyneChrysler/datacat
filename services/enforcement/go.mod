@@ -7,6 +7,7 @@ require (
 	github.com/KlyneChrysler/datacat/pkg/httpx v0.0.0
 	github.com/KlyneChrysler/datacat/pkg/kafkax v0.0.0-00010101000000-000000000000
 	github.com/KlyneChrysler/datacat/pkg/obsx v0.0.0
+	github.com/KlyneChrysler/datacat/pkg/policy v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-sdk-go-v2 v1.45.1
 	github.com/aws/aws-sdk-go-v2/config v1.33.2
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.21.2
@@ -44,3 +45,5 @@ replace (
 	github.com/KlyneChrysler/datacat/pkg/events => ../../pkg/events
 	github.com/KlyneChrysler/datacat/pkg/kafkax => ../../pkg/kafkax
 )
+
+replace github.com/KlyneChrysler/datacat/pkg/policy => ../../pkg/policy

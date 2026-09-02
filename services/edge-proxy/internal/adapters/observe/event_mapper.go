@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/KlyneChrysler/datacat/pkg/edge/agentauth"
+	"github.com/KlyneChrysler/datacat/pkg/edge/ident"
 	"github.com/KlyneChrysler/datacat/pkg/events"
 	"github.com/KlyneChrysler/datacat/pkg/hashx"
-	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/agentauth"
-	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/ident"
 )
 
 // eventFrom converts one request into its wire event.

@@ -1,15 +1,13 @@
 package config
 
 import (
-	"crypto/ed25519"
-	"encoding/hex"
 	"fmt"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/KlyneChrysler/datacat/pkg/envx"
+	"github.com/KlyneChrysler/datacat/pkg/guard"
 )
 
 // Load reads and validates all configuration, crashing on missing values.
@@ -18,7 +16,7 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	agentKeys, err := parseAgentKeys(os.Getenv("AGENT_KEYS"))
+	agentKeys, err := guard.ParseAgentKeys(os.Getenv("AGENT_KEYS"))
 	if err != nil {
 		return Config{}, err
 	}
@@ -41,28 +39,6 @@ func Load() (Config, error) {
 	}
 
 	return cfg, validate(cfg)
-}
-
-// parseAgentKeys reads keyid=hexpubkey pairs, failing on any bad entry.
-func parseAgentKeys(raw string) (map[string]ed25519.PublicKey, error) {
-	keys := make(map[string]ed25519.PublicKey)
-	if raw == "" {
-		return keys, nil
-	}
-
-	for _, entry := range strings.Split(raw, ";") {
-		keyID, hexKey, found := strings.Cut(entry, "=")
-		if !found {
-			return nil, fmt.Errorf("config: AGENT_KEYS entry %q is not keyid=hexpubkey", entry)
-		}
-		pub, err := hex.DecodeString(hexKey)
-		if err != nil || len(pub) != ed25519.PublicKeySize {
-			return nil, fmt.Errorf("config: AGENT_KEYS %q has an invalid public key", keyID)
-		}
-		keys[keyID] = ed25519.PublicKey(pub)
-	}
-
-	return keys, nil
 }
 
 func parseUpstream(raw string) (*url.URL, error) {

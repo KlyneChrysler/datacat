@@ -1,13 +1,17 @@
 go 1.26
 
 use (
+	./pkg/edge
 	./pkg/envx
 	./pkg/events
+	./pkg/guard
 	./pkg/hashx
 	./pkg/httpx
 	./pkg/kafkax
+	./pkg/policy
 	./pkg/obsx
 	./services/edge-proxy
 	./services/enforcement
+	./services/lite
 	./services/traffic-sim
 )

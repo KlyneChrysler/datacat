@@ -4,23 +4,23 @@ package ports
 import (
 	"context"
 
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 type DecisionStore interface {
-	Save(ctx context.Context, d domain.Decision) error
-	FindBySession(ctx context.Context, sessionID string) (domain.Decision, error)
+	Save(ctx context.Context, d policy.Decision) error
+	FindBySession(ctx context.Context, sessionID string) (policy.Decision, error)
 }
 
 type ActionApplier interface {
-	Apply(ctx context.Context, d domain.Decision) error
+	Apply(ctx context.Context, d policy.Decision) error
 }
 
 type DecisionPublisher interface {
-	PublishDecision(ctx context.Context, d domain.Decision) error
+	PublishDecision(ctx context.Context, d policy.Decision) error
 }
 
 type VerdictSource interface {
 	// Consume handles each verdict until ctx ends.
-	Consume(ctx context.Context, handle func(context.Context, domain.Verdict) error) error
+	Consume(ctx context.Context, handle func(context.Context, policy.Verdict) error) error
 }

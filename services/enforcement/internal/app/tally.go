@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
 // tallyBuckets is one hour of minute buckets, the largest summary window.
@@ -21,16 +21,16 @@ func NewTally() *Tally {
 }
 
 // Record counts one event in the current minute.
-func (t *Tally) Record(class domain.Classification) {
+func (t *Tally) Record(class policy.Classification) {
 	t.recordAt(class, time.Now())
 }
 
 // Summary reports the last windowMinutes of events, clamped to the ring.
-func (t *Tally) Summary(windowMinutes int) domain.TrafficSummary {
+func (t *Tally) Summary(windowMinutes int) policy.TrafficSummary {
 	return t.summaryAt(windowMinutes, time.Now())
 }
 
-func (t *Tally) recordAt(class domain.Classification, now time.Time) {
+func (t *Tally) recordAt(class policy.Classification, now time.Time) {
 	minute := now.Unix() / 60
 
 	t.mu.Lock()
@@ -39,16 +39,16 @@ func (t *Tally) recordAt(class domain.Classification, now time.Time) {
 	bucket := &t.buckets[minute%tallyBuckets]
 	if bucket.minute != minute {
 		bucket.minute = minute
-		bucket.counts = make(map[domain.Classification]int64, 4)
+		bucket.counts = make(map[policy.Classification]int64, 4)
 	}
 
 	bucket.counts[class]++
 }
 
-func (t *Tally) summaryAt(windowMinutes int, now time.Time) domain.TrafficSummary {
+func (t *Tally) summaryAt(windowMinutes int, now time.Time) policy.TrafficSummary {
 	window := clampWindow(windowMinutes)
 	oldest := now.Unix()/60 - int64(window) + 1
-	summary := domain.TrafficSummary{WindowMinutes: window}
+	summary := policy.TrafficSummary{WindowMinutes: window}
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -73,18 +73,18 @@ func clampWindow(minutes int) int {
 	return minutes
 }
 
-func addBucket(summary *domain.TrafficSummary, bucket minuteBucket) {
+func addBucket(summary *policy.TrafficSummary, bucket minuteBucket) {
 	for class, count := range bucket.counts {
 		summary.Total += count
 
 		switch class {
-		case domain.Human:
+		case policy.Human:
 			summary.Human += count
-		case domain.VerifiedBot:
+		case policy.VerifiedBot:
 			summary.VerifiedAgent += count
-		case domain.Unverified:
+		case policy.Unverified:
 			summary.Unverified += count
-		case domain.Abusive:
+		case policy.Abusive:
 			summary.Abusive += count
 		default:
 			summary.Other += count

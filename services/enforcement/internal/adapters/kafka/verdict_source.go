@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/KlyneChrysler/datacat/pkg/kafkax"
-	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	policy "github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
@@ -20,7 +20,7 @@ func NewVerdictSource(consumer *kafkax.Consumer) *VerdictSource {
 	return &VerdictSource{consumer: consumer}
 }
 
-func (s *VerdictSource) Consume(ctx context.Context, handle func(context.Context, domain.Verdict) error) error {
+func (s *VerdictSource) Consume(ctx context.Context, handle func(context.Context, policy.Verdict) error) error {
 	return s.consumer.Consume(ctx, func(ctx context.Context, _, value []byte) error {
 		verdict, err := decodeVerdict(value)
 		if err != nil {
