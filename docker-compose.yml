@@ -82,14 +82,24 @@ services:
       - "4566:4566"
 
   # Keep this tag in sync with flinkVersion in services/classifier-job/build.gradle.kts
+  # The classifier env is read by `flink run` at submission (JobConfig.fromEnv).
+  # Local windows are short for fast feedback; staging/prod use the defaults.
   flink-jobmanager:
     image: flink:2.2.1-java17
     command: jobmanager
     environment:
+      KAFKA_BROKERS: redpanda:9092
+      REQUESTS_TOPIC: datacat.requests
+      VERDICTS_TOPIC: datacat.verdicts
+      CHECKPOINT_URI: file:///tmp/flink-checkpoints
+      WINDOW_SECONDS: "60"
+      SLIDE_SECONDS: "10"
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: flink-jobmanager
     ports:
       - "8086:8081"
+    depends_on:
+      - redpanda
 
   flink-taskmanager:
     image: flink:2.2.1-java17
