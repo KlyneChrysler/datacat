@@ -5,10 +5,17 @@ package config
 import "time"
 
 type Config struct {
-	Port            string
-	KafkaBrokers    string
-	VerdictsTopic   string
-	DecisionsTopic  string
-	ConsumerGroup   string
+	Port           string
+	KafkaBrokers   string
+	VerdictsTopic  string
+	DecisionsTopic string
+	ConsumerGroup  string
+	// DecisionsTable selects the store: empty = in-memory (single replica
+	// only), set = DynamoDB (horizontally scalable). Optional by design.
+	DecisionsTable string
+	// DynamoEndpoint overrides the DynamoDB target for DynamoDB Local;
+	// empty = real AWS. Optional by design.
+	DynamoEndpoint  string
+	DecisionTTL     time.Duration
 	ShutdownTimeout time.Duration
 }

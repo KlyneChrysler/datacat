@@ -15,6 +15,9 @@ func Load() (Config, error) {
 		VerdictsTopic:   os.Getenv("VERDICTS_TOPIC"),
 		DecisionsTopic:  os.Getenv("DECISIONS_TOPIC"),
 		ConsumerGroup:   os.Getenv("CONSUMER_GROUP"),
+		DecisionsTable:  os.Getenv("DECISIONS_TABLE"),
+		DynamoEndpoint:  os.Getenv("DYNAMO_ENDPOINT"),
+		DecisionTTL:     time.Hour,
 		ShutdownTimeout: 10 * time.Second,
 	}
 	return cfg, validate(cfg)

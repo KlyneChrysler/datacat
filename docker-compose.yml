@@ -36,6 +36,13 @@ services:
       DECISIONS_TOPIC: datacat.decisions
       CONSUMER_GROUP: enforcement
       LOG_LEVEL: info
+      # Uncomment to switch the decision store from in-memory to DynamoDB
+      # Local (create the table first: infra/terraform/envs/local apply).
+      # DECISIONS_TABLE: local-datacat-decisions
+      # DYNAMO_ENDPOINT: http://dynamodb:8000
+      # AWS_ACCESS_KEY_ID: local
+      # AWS_SECRET_ACCESS_KEY: local
+      # AWS_REGION: us-east-1
     ports:
       - "8081:8081"
     depends_on:

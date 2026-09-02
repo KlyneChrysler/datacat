@@ -1,6 +1,6 @@
-# NOTE: replicas stays 1 while DecisionStore is in-memory - two replicas
-# would each hold half the decisions behind one Service. The DynamoDB
-# adapter (AWS phase) makes this horizontally scalable.
+# replicas may exceed 1 ONLY when env sets DECISIONS_TABLE (DynamoDB
+# store). With the default in-memory store, two replicas would each hold
+# half the decisions behind one Service.
 replicas: 1
 
 image:

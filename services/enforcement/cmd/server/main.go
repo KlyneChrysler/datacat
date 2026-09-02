@@ -15,12 +15,14 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/kafkax"
 	"github.com/KlyneChrysler/datacat/pkg/obsx"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/actions"
+	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/dynamo"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/httpapi"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/kafka"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/adapters/memory"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/app"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/config"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/domain"
+	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
 func main() {
@@ -50,8 +52,12 @@ func run() error {
 	}
 	defer producer.Close()
 
+	store, err := newDecisionStore(ctx, cfg, log)
+	if err != nil {
+		return err
+	}
 	publisher := kafka.NewDecisionPublisher(producer, cfg.DecisionsTopic)
-	enforcer := app.NewEnforcer(domain.DefaultPolicy(), memory.NewDecisionStore(), publisher, actions.NewLogApplier(log))
+	enforcer := app.NewEnforcer(domain.DefaultPolicy(), store, publisher, actions.NewLogApplier(log))
 	source := kafka.NewVerdictSource(consumer)
 	server := httpx.NewServer(cfg.Port, httpapi.NewRouter(httpapi.New(enforcer, log), log), cfg.ShutdownTimeout)
 
@@ -60,4 +66,19 @@ func run() error {
 	g.Go(func() error { return source.Consume(ctx, enforcer.HandleVerdict) })
 	g.Go(func() error { return server.ListenAndServe(ctx) })
 	return g.Wait()
+}
+
+// newDecisionStore selects the store adapter from config (wiring only):
+// DynamoDB when a table is configured, in-memory otherwise.
+func newDecisionStore(ctx context.Context, cfg config.Config, log *slog.Logger) (ports.DecisionStore, error) {
+	if cfg.DecisionsTable == "" {
+		log.Info("decision store: in-memory (single replica only)")
+		return memory.NewDecisionStore(), nil
+	}
+	client, err := dynamo.NewClient(ctx, cfg.DynamoEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	log.Info("decision store: dynamodb", "table", cfg.DecisionsTable)
+	return dynamo.NewDecisionStore(client, cfg.DecisionsTable, cfg.DecisionTTL), nil
 }
