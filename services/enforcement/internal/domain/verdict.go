@@ -1,7 +1,6 @@
 package domain
 
-// Verdict is immutable: constructed once, never mutated. "Changes" return a
-// new value (see WithClass).
+// Verdict is one immutable classification of a session.
 type Verdict struct {
 	SessionID  string
 	Class      Classification
@@ -15,10 +14,13 @@ func NewVerdict(sessionID string, class Classification, confidence float64) (Ver
 	if confidence < 0 || confidence > 1 {
 		return Verdict{}, ErrConfidenceRange
 	}
+
 	return Verdict{SessionID: sessionID, Class: class, Confidence: confidence}, nil
 }
 
+// WithClass returns a copy with a different class.
 func (v Verdict) WithClass(c Classification) Verdict {
-	v.Class = c // value receiver: mutates the copy, not the original
+	v.Class = c
+
 	return v
 }

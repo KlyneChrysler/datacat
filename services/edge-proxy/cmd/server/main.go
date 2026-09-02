@@ -1,5 +1,4 @@
-// Command server is the edge-proxy composition root: wiring and lifecycle
-// only.
+// Command server is the edge proxy composition root.
 package main
 
 import (
@@ -52,34 +51,28 @@ func run() error {
 		return err
 	}
 
-	publisher := kafka.NewEventPublisher(producer, cfg.RequestsTopic)
-	recorder := app.NewRecorder(publisher, log, cfg.EventBufferSize)
+	recorder := app.NewRecorder(kafka.NewEventPublisher(producer, cfg.RequestsTopic), log, cfg.EventBufferSize)
 	gatekeeper := app.NewGatekeeper(cfg.GateTTL)
 	limiter := app.NewRateLimiter(cfg.RateLimitPerMinute, cfg.RateLimitBurst, cfg.GateTTL)
 	challenger := app.NewChallenger(cfg.ChallengeSecret, cfg.ChallengeDifficulty)
+	traffic := gate.New(gatekeeper, limiter, challenger, log)
 	decisions := kafka.NewDecisionSource(consumer)
-	router := newRouter(cfg, recorder, gatekeeper, limiter, challenger, log)
-	server := httpx.NewServer(cfg.Port, router, cfg.ShutdownTimeout)
+	server := httpx.NewServer(cfg.Port, newRouter(cfg, recorder, traffic, challenger, log), cfg.ShutdownTimeout)
 
 	log.Info("starting", "port", cfg.Port, "upstream", cfg.UpstreamURL.String(), "topic", cfg.RequestsTopic)
+
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return recorder.Run(ctx) })
 	g.Go(func() error { return decisions.Consume(ctx, gatekeeper.Update) })
 	g.Go(func() error { return server.ListenAndServe(ctx) })
+
 	return g.Wait()
 }
 
-// newRouter wires the traffic path: observe first (blocked requests are
-// signal too), then the gate, then the upstream proxy. Health endpoints and
-// the challenge flow stay outside the gate — a challenged session must be
-// able to reach the verification endpoints.
-func newRouter(cfg config.Config, recorder *app.Recorder, gatekeeper *app.Gatekeeper,
-	limiter *app.RateLimiter, challenger *app.Challenger, log *slog.Logger) http.Handler {
-	// Order: verify agent identity first (observe stamps the result on the
-	// event), then observe, then the gate.
-	traffic := httpx.WithMiddleware(proxy.New(cfg.UpstreamURL, log),
-		agentauth.Middleware(app.NewAgentVerifier(cfg.AgentKeys)),
-		observe.Middleware(recorder), gate.Middleware(gatekeeper, limiter, challenger, log))
+// newRouter wires the traffic path, health and challenge stay outside the gate.
+func newRouter(cfg config.Config, recorder *app.Recorder, traffic *gate.Gate, challenger *app.Challenger, log *slog.Logger) http.Handler {
+	agentCheck := agentauth.Middleware(app.NewAgentVerifier(cfg.AgentKeys))
+	proxied := httpx.WithMiddleware(proxy.New(cfg.UpstreamURL, log), agentCheck, observe.Middleware(recorder), traffic.Middleware())
 	verification := challenge.New(challenger, log)
 
 	mux := http.NewServeMux()
@@ -91,6 +84,7 @@ func newRouter(cfg config.Config, recorder *app.Recorder, gatekeeper *app.Gateke
 	})
 	mux.HandleFunc("GET "+challenge.PagePath, verification.Page)
 	mux.HandleFunc("POST "+challenge.PagePath+"/verify", verification.Verify)
-	mux.Handle("/", traffic)
+	mux.Handle("/", proxied)
+
 	return httpx.WithMiddleware(mux, httpx.RequestID(), httpx.Logging(log), httpx.Recover(log))
 }

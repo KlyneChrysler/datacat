@@ -1,6 +1,4 @@
 package events
 
-// SessionCookie names the cookie carrying a session identity — part of the
-// wire contract between edge-proxy (reads it) and clients/simulators
-// (send it).
+// SessionCookie names the cookie carrying a session identity.
 const SessionCookie = "dc_session"

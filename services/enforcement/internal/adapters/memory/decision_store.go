@@ -1,6 +1,4 @@
-// Package memory is the local DecisionStore adapter. The DynamoDB adapter
-// replaces it in the AWS phase behind the same port — swapping is a wiring
-// change in main.go only (twelve-factor IV).
+// Package memory holds the in memory decision store for single replicas.
 package memory
 
 import (
@@ -25,16 +23,20 @@ func NewDecisionStore() *DecisionStore {
 func (s *DecisionStore) Save(_ context.Context, d domain.Decision) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.bySession[d.SessionID] = d
+
 	return nil
 }
 
 func (s *DecisionStore) FindBySession(_ context.Context, sessionID string) (domain.Decision, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	decision, ok := s.bySession[sessionID]
 	if !ok {
 		return domain.Decision{}, domain.ErrDecisionNotFound
 	}
+
 	return decision, nil
 }

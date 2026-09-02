@@ -2,9 +2,7 @@ package app
 
 import "time"
 
-// tokenBucket is the RateLimiter's stored state per session (shape file,
-// standards rule 2). tokens refills continuously at the limiter's rate up
-// to its burst capacity.
+// tokenBucket is the stored rate limit state for one session.
 type tokenBucket struct {
 	tokens     float64
 	lastRefill time.Time

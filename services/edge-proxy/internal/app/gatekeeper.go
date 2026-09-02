@@ -7,10 +7,7 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/events"
 )
 
-// Gatekeeper holds the latest enforcement decision per session, fed by the
-// decisions topic and consulted on the hot request path. Entries expire so a
-// session that stops misbehaving is eventually forgiven and memory stays
-// bounded; expiry is checked lazily on read. All operations are O(1).
+// Gatekeeper remembers the latest decision per session with a ttl.
 type Gatekeeper struct {
 	ttl  time.Duration
 	mu   sync.RWMutex
@@ -21,19 +18,20 @@ func NewGatekeeper(ttl time.Duration) *Gatekeeper {
 	return &Gatekeeper{ttl: ttl, byID: make(map[string]gateEntry)}
 }
 
-// Update records a decision. Used as the decision-source handler.
+// Update records the newest decision for a session.
 func (g *Gatekeeper) Update(d events.Decision) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+
 	g.byID[d.SessionID] = gateEntry{action: d.Action, savedAt: time.Now()}
 }
 
-// ActionFor returns the standing action for a session; unknown or expired
-// sessions are allowed — the classifier will judge them again.
+// ActionFor returns the standing action, allowing unknown or expired sessions.
 func (g *Gatekeeper) ActionFor(sessionID string) string {
 	g.mu.RLock()
 	entry, ok := g.byID[sessionID]
 	g.mu.RUnlock()
+
 	if !ok {
 		return "allow"
 	}
@@ -41,11 +39,13 @@ func (g *Gatekeeper) ActionFor(sessionID string) string {
 		g.forget(sessionID)
 		return "allow"
 	}
+
 	return entry.action
 }
 
 func (g *Gatekeeper) forget(sessionID string) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+
 	delete(g.byID, sessionID)
 }

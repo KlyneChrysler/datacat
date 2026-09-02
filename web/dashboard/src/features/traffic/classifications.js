@@ -1,6 +1,4 @@
-// Registry (file taxonomy): the fixed display order and palette slot for
-// every classification. Color follows the entity — the slot mapping never
-// changes with counts or filters, so identity stays stable across charts.
+// Fixed display order and palette slot per classification, never repainted.
 export const CLASSIFICATIONS = [
 	{ key: "human", label: "Human", slot: 1 },
 	{ key: "verified_agent", label: "Verified agents", slot: 2 },

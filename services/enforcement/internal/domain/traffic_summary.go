@@ -1,9 +1,6 @@
 package domain
 
-// TrafficSummary counts classification events over a recent window. A
-// session escalating (e.g. unverified → abusive) contributes one event per
-// transition — this summarizes the classifier's output stream, not raw
-// request volume.
+// TrafficSummary counts classification events over a recent window.
 type TrafficSummary struct {
 	WindowMinutes int
 	Human         int64

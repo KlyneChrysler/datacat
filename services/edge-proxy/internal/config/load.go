@@ -12,8 +12,7 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/envx"
 )
 
-// Load reads and validates all configuration at startup; a missing variable
-// crashes the process at boot, not at first use.
+// Load reads and validates all configuration, crashing on missing values.
 func Load() (Config, error) {
 	upstream, err := parseUpstream(os.Getenv("UPSTREAM_URL"))
 	if err != nil {
@@ -23,6 +22,7 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+
 	cfg := Config{
 		Port:                os.Getenv("PORT"),
 		UpstreamURL:         upstream,
@@ -39,16 +39,17 @@ func Load() (Config, error) {
 		AgentKeys:           agentKeys,
 		ShutdownTimeout:     10 * time.Second,
 	}
+
 	return cfg, validate(cfg)
 }
 
-// parseAgentKeys reads "keyid=hexpubkey;..." — a malformed entry fails
-// startup rather than silently dropping a trusted key.
+// parseAgentKeys reads keyid=hexpubkey pairs, failing on any bad entry.
 func parseAgentKeys(raw string) (map[string]ed25519.PublicKey, error) {
 	keys := make(map[string]ed25519.PublicKey)
 	if raw == "" {
 		return keys, nil
 	}
+
 	for _, entry := range strings.Split(raw, ";") {
 		keyID, hexKey, found := strings.Cut(entry, "=")
 		if !found {
@@ -60,6 +61,7 @@ func parseAgentKeys(raw string) (map[string]ed25519.PublicKey, error) {
 		}
 		keys[keyID] = ed25519.PublicKey(pub)
 	}
+
 	return keys, nil
 }
 
@@ -67,10 +69,12 @@ func parseUpstream(raw string) (*url.URL, error) {
 	if raw == "" {
 		return nil, fmt.Errorf("config: UPSTREAM_URL is required")
 	}
+
 	upstream, err := url.Parse(raw)
 	if err != nil {
 		return nil, fmt.Errorf("config: UPSTREAM_URL invalid: %w", err)
 	}
+
 	return upstream, nil
 }
 
@@ -87,5 +91,6 @@ func validate(c Config) error {
 			return fmt.Errorf("config: %s is required", name)
 		}
 	}
+
 	return nil
 }

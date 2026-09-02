@@ -1,5 +1,4 @@
-// Package agentauth is the inbound adapter verifying trusted-agent request
-// signatures and exposing the result to downstream adapters via context.
+// Package agentauth verifies trusted agent request signatures.
 package agentauth
 
 import "context"
@@ -10,9 +9,9 @@ func withVerified(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextKey{}, true)
 }
 
-// Verified reports whether this request carried a valid trusted-agent
-// signature.
+// Verified reports whether this request carried a valid agent signature.
 func Verified(ctx context.Context) bool {
 	verified, ok := ctx.Value(contextKey{}).(bool)
+
 	return ok && verified
 }

@@ -2,8 +2,7 @@ package domain
 
 import "math/rand/v2"
 
-// LoopingPaths revisits a small fixed set of paths in random order —
-// human-like navigation. Next is O(1).
+// LoopingPaths revisits a small path set in random order, human style.
 type LoopingPaths struct {
 	paths []string
 }

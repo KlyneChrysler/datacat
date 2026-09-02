@@ -12,23 +12,21 @@ import (
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/app"
 )
 
-// Signature headers (simplified Web-Bot-Auth-style profile; the signature
-// base is method, path, session, and timestamp, newline-joined).
+// Signature headers of the trusted agent profile.
 const (
 	HeaderKey       = "X-Agent-Key"
 	HeaderSignature = "X-Agent-Signature"
 	HeaderTimestamp = "X-Agent-Timestamp"
 )
 
-// Middleware marks requests bearing a valid trusted-agent signature. An
-// invalid or absent signature is not an error — the request simply stays
-// unverified and the classifier judges it on behavior.
+// Middleware marks signed requests, unsigned ones just stay unverified.
 func Middleware(verifier *app.AgentVerifier) httpx.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if verifiedRequest(r, verifier) {
 				r = r.WithContext(withVerified(r.Context()))
 			}
+
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -39,6 +37,7 @@ func verifiedRequest(r *http.Request, verifier *app.AgentVerifier) bool {
 	if keyID == "" {
 		return false
 	}
+
 	sig, err := base64.StdEncoding.DecodeString(r.Header.Get(HeaderSignature))
 	if err != nil {
 		return false
@@ -47,6 +46,7 @@ func verifiedRequest(r *http.Request, verifier *app.AgentVerifier) bool {
 	if err != nil {
 		return false
 	}
+
 	base := SignatureBase(r.Method, r.URL.Path, ident.SessionID(r), issued)
 	return verifier.Verify(keyID, base, sig, time.Unix(issued, 0), time.Now())
 }

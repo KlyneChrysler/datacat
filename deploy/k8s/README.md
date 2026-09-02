@@ -10,9 +10,9 @@ capabilities, a per-service ServiceAccount (the IRSA seam for AWS), and
 
 Charts:
 
-- `platform/` — local backing services: single-node Redpanda, the whoami demo
+- `platform/` - local backing services: single-node Redpanda, the whoami demo
   upstream, and the `topic-init` Job (twelve-factor XII admin process).
-- `edge-proxy/`, `enforcement/` — the datacat services.
+- `edge-proxy/`, `enforcement/` - the datacat services.
 
 The Flink classifier is not deployed here yet; it runs on the Compose Flink
 cluster until the Flink-operator phase. In AWS, `platform/` is replaced by

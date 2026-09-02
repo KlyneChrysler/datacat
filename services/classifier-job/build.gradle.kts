@@ -27,7 +27,7 @@ val flinkKafkaVersion = "5.0.0-2.2"
 val jacksonVersion = "2.22.2"
 
 dependencies {
-	// Provided by the Flink cluster at runtime — never bundle into the job jar.
+	// Provided by the Flink cluster at runtime - never bundle into the job jar.
 	compileOnly("org.apache.flink:flink-streaming-java:$flinkVersion")
 
 	// Bundled into the fat jar the cluster loads.

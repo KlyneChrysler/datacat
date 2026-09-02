@@ -1,6 +1,4 @@
-/* Palette: dataviz reference instance, slots 1-5, validated for light and
-   dark surfaces (adjacent-pair gates pass; light-mode contrast WARN is
-   relieved by the always-visible value labels and the table view). */
+/* Validated palette slots 1 to 5 for light and dark surfaces. */
 .viz-root {
 	color-scheme: light;
 	--surface-1: #fcfcfb;

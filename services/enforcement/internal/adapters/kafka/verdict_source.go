@@ -1,5 +1,4 @@
-// Package kafka holds the enforcement Kafka adapters: inbound verdicts,
-// outbound decisions. Wire-format knowledge lives in the codec files only.
+// Package kafka holds the enforcement Kafka adapters.
 package kafka
 
 import (
@@ -10,6 +9,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
+// VerdictSource feeds verdicts from Kafka to the enforcer.
 type VerdictSource struct {
 	consumer *kafkax.Consumer
 }
@@ -26,6 +26,7 @@ func (s *VerdictSource) Consume(ctx context.Context, handle func(context.Context
 		if err != nil {
 			return err
 		}
+
 		return handle(ctx, verdict)
 	})
 }

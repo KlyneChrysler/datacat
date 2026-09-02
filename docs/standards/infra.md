@@ -6,7 +6,7 @@ If it isn't in Terraform or a manifest, it doesn't exist.
 
 ## Terraform
 
-### Layout — modules are the "functions" of infra
+### Layout - modules are the "functions" of infra
 
 ```
 infra/terraform/
@@ -27,7 +27,7 @@ infra/terraform/
 Rules:
 
 - Environments differ ONLY in `terraform.tfvars` and backend config. An env's
-  `main.tf` is nothing but module calls — the orchestrator pattern again.
+  `main.tf` is nothing but module calls - the orchestrator pattern again.
 - Every module declares typed, validated, described `variable` blocks and
   explicit `output` blocks. No module reaches into another's internals;
   wiring happens via outputs → inputs in the env layer.
@@ -56,7 +56,7 @@ variable "ttl_attribute" {
 ```
 
 ```hcl
-# envs/staging/main.tf — module calls only, like a composition root
+# envs/staging/main.tf - module calls only, like a composition root
 module "network" {
 	source      = "../../modules/network"
 	environment = var.environment
@@ -71,10 +71,10 @@ module "verdicts_table" {
 }
 ```
 
-### IAM — least privilege, per service
+### IAM - least privilege, per service
 
 Every service gets its own IAM role via IRSA (IAM Roles for Service Accounts).
-Policies name exact resources — no `"Resource": "*"`, no shared "app role".
+Policies name exact resources - no `"Resource": "*"`, no shared "app role".
 The enforcement service can write its decisions table and nothing else.
 
 ## Docker
@@ -103,7 +103,7 @@ gates the push.
 
 ## Kubernetes
 
-Every workload ships the full checklist — a Deployment missing any of these is
+Every workload ships the full checklist - a Deployment missing any of these is
 incomplete:
 
 ```yaml
@@ -194,14 +194,14 @@ jobs:
     steps:
       - run: docker build -t $ECR/datacat/${{ inputs.service }}:${{ github.sha }} .
       - run: trivy image --exit-code 1 --severity HIGH,CRITICAL $IMAGE
-      - run: docker push $IMAGE   # OIDC auth to AWS — no long-lived keys
+      - run: docker push $IMAGE   # OIDC auth to AWS - no long-lived keys
 ```
 
 DevSecOps gates, all blocking:
 
 - **Secrets**: gitleaks scan on every PR.
 - **Dependencies**: `govulncheck` (Go), OWASP dependency-check (Java),
-  `npm audit` (React) — fail on known-exploitable.
+  `npm audit` (React) - fail on known-exploitable.
 - **Images**: Trivy, fail on HIGH/CRITICAL.
 - **Auth to AWS**: GitHub OIDC federation only. Long-lived access keys are
   forbidden in CI and on laptops alike.
@@ -220,7 +220,7 @@ DevSecOps gates, all blocking:
 ## Cost discipline
 
 - Local first: kind + Docker Compose (Redpanda, DynamoDB Local, LocalStack,
-  Flink session cluster) for daily development — $0.
+  Flink session cluster) for daily development - $0.
 - AWS envs are ephemeral: `terraform apply` to exercise, `terraform destroy`
   between sessions. Budget alarm at a fixed monthly cap is part of the
   Terraform baseline, created before any other AWS resource.

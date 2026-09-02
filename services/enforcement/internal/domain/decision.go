@@ -1,6 +1,6 @@
 package domain
 
-// Decision is the enforcement outcome for one session. Immutable.
+// Decision is one immutable enforcement outcome for a session.
 type Decision struct {
 	SessionID string
 	Class     Classification

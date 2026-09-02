@@ -7,7 +7,7 @@ class hierarchies. `gofmt` + `go vet` + `golangci-lint` are CI gates.
 
 ```
 services/enforcement/
-├── cmd/server/main.go        composition root — wiring ONLY
+├── cmd/server/main.go        composition root - wiring ONLY
 ├── internal/
 │   ├── domain/               pure logic: Verdict, Action, Session
 │   ├── ports/                consumer-defined interfaces
@@ -23,10 +23,10 @@ services/enforcement/
 
 Shared code lives in `pkg/` at repo root (`events`, `kafkax`, `httpx`, `obsx`,
 `hashx`) and is imported like any third-party module. `internal/` is never
-shared. A generic helper written inside a service is a defect — it moves to
+shared. A generic helper written inside a service is a defect - it moves to
 `pkg/`.
 
-## File taxonomy (rule 2, Go form) — unforgiving
+## File taxonomy (rule 2, Go form) - unforgiving
 
 Within every package, one kind per file:
 
@@ -38,7 +38,7 @@ internal/domain/          one concept per file:
   errors.go                 sentinel errors only
 internal/adapters/httpapi/
   router.go                 wiring only
-  handlers.go               behavior only — NO type declarations
+  handlers.go               behavior only - NO type declarations
   responses.go              wire shapes only
   mapper.go                 domain → wire conversion only
 internal/adapters/kafka/
@@ -51,7 +51,7 @@ internal/config/
 
 Binding consequences, no exceptions for unexported names:
 
-- A `struct` with JSON/dynamodbav tags inside a behavior file is a defect —
+- A `struct` with JSON/dynamodbav tags inside a behavior file is a defect -
   wire and storage shapes get shapes files.
 - A function converting between two representations (`toX`, `decodeX`,
   `eventFrom`) is a mapper/codec and gets a mapper/codec file, even with a
@@ -61,7 +61,7 @@ Binding consequences, no exceptions for unexported names:
 - Private leaf steps of the file's single task and kind stay
   (`deny` inside the gate middleware, `shutdown` inside the server).
 
-## Config — factor III, validated at startup
+## Config - factor III, validated at startup
 
 Env only. Missing config crashes the process at boot, not at first use.
 
@@ -109,7 +109,7 @@ func (c Config) validate() error {
 }
 ```
 
-## Domain — immutable values, zero imports of infra
+## Domain - immutable values, zero imports of infra
 
 ```go
 // internal/domain/verdict.go
@@ -149,7 +149,7 @@ func (v Verdict) WithClass(c Classification) Verdict {
 ```
 
 ```go
-// internal/domain/errors.go — sentinel errors live with the domain
+// internal/domain/errors.go - sentinel errors live with the domain
 package domain
 
 import "errors"
@@ -161,7 +161,7 @@ var (
 )
 ```
 
-## Ports — small, consumer-defined
+## Ports - small, consumer-defined
 
 The interface lives in the package that *needs* the capability. Implementations
 are elsewhere and are never referenced by name outside `main.go`.
@@ -191,7 +191,7 @@ type VerdictSource interface {
 }
 ```
 
-## App — the orchestrator layer
+## App - the orchestrator layer
 
 Every public method reads like prose: one delegating call per step.
 
@@ -230,7 +230,7 @@ func (e *Enforcer) HandleVerdict(ctx context.Context, v domain.Verdict) error {
 }
 ```
 
-## Adapters — one per backing service (factor IV)
+## Adapters - one per backing service (factor IV)
 
 ```go
 // internal/adapters/dynamo/decision_store.go
@@ -264,13 +264,13 @@ func (s *DecisionStore) Save(ctx context.Context, d domain.Decision) error {
 ## Errors
 
 - Wrap with context at every boundary: `fmt.Errorf("doing X for %s: %w", id, err)`.
-- Compare with `errors.Is` / extract with `errors.As` — never string matching.
+- Compare with `errors.Is` / extract with `errors.As` - never string matching.
 - Sentinels in `domain/errors.go`; adapters translate infra errors into them
   (e.g. DynamoDB `ResourceNotFoundException` → `domain.ErrVerdictNotFound`).
 - `_ = err` and empty error branches are forbidden. If an error is truly
   ignorable, a comment must say why.
 
-## HTTP — handlers are thin adapters
+## HTTP - handlers are thin adapters
 
 Handlers parse, delegate, respond. Business logic never lives in a handler.
 
@@ -304,7 +304,7 @@ func (h *Handlers) GetDecision(w http.ResponseWriter, r *http.Request) {
 ```
 
 `pkg/httpx` owns the response envelope (`{"ok": bool, "data": ..., "error": ...}`),
-middleware, and request validation helpers — written once, reused by every service.
+middleware, and request validation helpers - written once, reused by every service.
 
 ## Composition root + graceful shutdown (factor IX)
 
@@ -385,7 +385,7 @@ Never log secrets, credentials, or full request bodies.
 ## Testing
 
 - Table-driven tests, `t.Run` subtests, `t.Parallel()` where isolation allows.
-- Fakes are hand-written structs implementing ports — no mock frameworks.
+- Fakes are hand-written structs implementing ports - no mock frameworks.
 - Domain and app layers: TDD, ≥ 80% coverage, zero infrastructure needed.
 - Adapters: integration tests against local containers (Redpanda, DynamoDB
   Local), tagged `//go:build integration`.

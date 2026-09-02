@@ -11,7 +11,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import java.time.Duration;
 
-/** Inbound edges of the job graph. Wire-level choices live here only. */
+/** Inbound edges of the job graph. */
 public final class Sources {
 
 	private static final Duration OUT_OF_ORDERNESS = Duration.ofSeconds(10);
@@ -28,11 +28,11 @@ public final class Sources {
 				.setStartingOffsets(OffsetsInitializer.earliest())
 				.setValueOnlyDeserializer(new RequestEventDeserializer())
 				.build();
+
 		return env.fromSource(source, watermarks(), "request-events");
 	}
 
-	// Event time with bounded out-of-orderness; idleness keeps quiet
-	// partitions from stalling the watermark.
+	// Event time with idleness so quiet partitions never stall the watermark.
 	private static WatermarkStrategy<RequestEvent> watermarks() {
 		return WatermarkStrategy
 				.<RequestEvent>forBoundedOutOfOrderness(OUT_OF_ORDERNESS)

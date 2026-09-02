@@ -16,12 +16,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Scores features through every signal and emits a verdict only when the
- * classification changes — downstream consumers see transitions, not the
- * steady state repeated every slide. Keyed state carries the last class with
- * a TTL: sessions end, state must not grow forever.
- */
+/** Scores features and emits a verdict only when the class changes. */
 public final class VerdictAssembler extends KeyedProcessFunction<String, SessionFeatures, Verdict> {
 
 	private static final Duration STATE_TTL = Duration.ofHours(1);
@@ -39,14 +34,14 @@ public final class VerdictAssembler extends KeyedProcessFunction<String, Session
 	public void open(OpenContext ctx) {
 		ValueStateDescriptor<String> descriptor = new ValueStateDescriptor<>("last-class", String.class);
 		descriptor.enableTimeToLive(StateTtlConfig.newBuilder(STATE_TTL).build());
+
 		lastClass = getRuntimeContext().getState(descriptor);
 	}
 
 	@Override
-	public void processElement(SessionFeatures features, Context ctx, Collector<Verdict> out)
-			throws Exception {
-		Verdict verdict = thresholds.verdictFor(features.sessionId(), features.windowEndMillis(),
-				scoreAll(features), features.verifiedShare());
+	public void processElement(SessionFeatures features, Context ctx, Collector<Verdict> out) throws Exception {
+		Verdict verdict = thresholds.verdictFor(features.sessionId(), features.windowEndMillis(), scoreAll(features), features.verifiedShare());
+
 		emitIfChanged(verdict, out);
 	}
 

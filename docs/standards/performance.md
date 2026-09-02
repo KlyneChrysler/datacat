@@ -1,4 +1,4 @@
-# Performance Standards — Big-O and Allocation Discipline
+# Performance Standards - Big-O and Allocation Discipline
 
 Binding for all languages. The rules distinguish hot paths (unforgiving)
 from cold paths (strict). "It's fast enough on my machine" is not an
@@ -22,7 +22,7 @@ Terraform) is a cold path.
 
 1. **O(1) or O(log n) per item.** A per-item cost of O(n) in session count,
    rule count, or history length is a defect. If it cannot be avoided, the
-   function carries a written justification AND a bound on n — or it does
+   function carries a written justification AND a bound on n - or it does
    not merge.
 2. **Membership is a map/set lookup, never a scan.** `for` + compare to
    find one item is banned on hot paths.
@@ -35,15 +35,15 @@ Terraform) is a cold path.
    path has an explicit cap with a defined overflow policy (drop-and-count,
    evict, backpressure). Unbounded growth is a defect even when "unlikely".
 6. **String assembly uses a builder** (strings.Builder, StringBuilder,
-   array join) — never `+=` in a loop.
+   array join) - never `+=` in a loop.
 
 ## Cold-path rules (strict)
 
 1. **No accidental quadratic.** Nested iteration over collections that can
    grow together is a defect unless the inner collection is provably
    bounded by a constant (state the constant in a comment).
-2. **Every super-linear function carries a complexity comment** —
-   `// O(n log n): sorts the window sample (bounded at 512)` — stating the
+2. **Every super-linear function carries a complexity comment** -
+   `// O(n log n): sorts the window sample (bounded at 512)` - stating the
    class and the bound. No comment, no merge.
 3. **Sorting is O(n log n) once, not O(n² ) by insertion**; top-k uses a
    heap, not a full sort, when k << n.
@@ -61,7 +61,7 @@ Terraform) is a cold path.
 
 ## Verification
 
-- Reviews check the complexity class of every touched hot-path function —
+- Reviews check the complexity class of every touched hot-path function -
   it is part of correctness, not polish.
 - Known bounds live in code: caps are named constants
   (`MAX_SAMPLES = 512`), never magic numbers.
@@ -71,10 +71,10 @@ Terraform) is a cold path.
 
 ## Current codebase register (kept honest, update when it changes)
 
-- `Gatekeeper.ActionFor`: O(1) map read under RLock — compliant.
-- `Recorder.Record`: O(1) non-blocking enqueue, bounded 1024, drop-and-count — compliant.
+- `Gatekeeper.ActionFor`: O(1) map read under RLock - compliant.
+- `Recorder.Record`: O(1) non-blocking enqueue, bounded 1024, drop-and-count - compliant.
 - `FeatureMath.intervalCv` / `normalizedPathEntropy`: O(n log n)/O(n) on a
   window sample bounded at `FeatureAccumulator.MAX_SAMPLES = 512`; runs per
-  window emission (cold), not per event — compliant with comment.
-- `SessionFeatureAggregator.add`: O(1) append under cap — compliant.
+  window emission (cold), not per event - compliant with comment.
+- `SessionFeatureAggregator.add`: O(1) append under cap - compliant.
 - In-memory `DecisionStore`: O(1) map; DynamoDB adapter is O(1) point ops.

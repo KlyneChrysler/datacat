@@ -6,8 +6,7 @@ import (
 	"time"
 )
 
-// Load reads and validates all configuration at startup; a missing variable
-// crashes the process at boot, not at first use.
+// Load reads and validates all configuration, crashing on missing values.
 func Load() (Config, error) {
 	cfg := Config{
 		Port:            os.Getenv("PORT"),
@@ -21,6 +20,7 @@ func Load() (Config, error) {
 		DecisionTTL:     time.Hour,
 		ShutdownTimeout: 10 * time.Second,
 	}
+
 	return cfg, validate(cfg)
 }
 
@@ -36,5 +36,6 @@ func validate(c Config) error {
 			return fmt.Errorf("config: %s is required", name)
 		}
 	}
+
 	return nil
 }

@@ -2,8 +2,7 @@ package app
 
 import "time"
 
-// gateEntry is the Gatekeeper's stored state per session (shape file,
-// standards rule 2).
+// gateEntry is the stored decision state for one session.
 type gateEntry struct {
 	action  string
 	savedAt time.Time

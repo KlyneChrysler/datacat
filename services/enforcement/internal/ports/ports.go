@@ -1,5 +1,4 @@
-// Package ports holds the interfaces enforcement consumes. Implementations
-// live in adapters and meet these contracts only in the composition root.
+// Package ports holds the interfaces enforcement consumes.
 package ports
 
 import (
@@ -22,6 +21,6 @@ type DecisionPublisher interface {
 }
 
 type VerdictSource interface {
-	// Consume blocks, invoking handle for each verdict until ctx is done.
+	// Consume handles each verdict until ctx ends.
 	Consume(ctx context.Context, handle func(context.Context, domain.Verdict) error) error
 }

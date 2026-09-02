@@ -18,10 +18,7 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 
 import java.time.Duration;
 
-/**
- * Job graph assembly only (the composition root): every statement is one
- * pipeline step. Operators, signals, and serde carry the logic.
- */
+/** Job graph assembly, every statement is one pipeline step. */
 public final class ClassifierJob {
 
 	private ClassifierJob() {
@@ -35,8 +32,7 @@ public final class ClassifierJob {
 
 		DataStream<SessionFeatures> features = events
 				.keyBy(RequestEvent::sessionId)
-				.window(SlidingEventTimeWindows.of(
-						Duration.ofSeconds(config.windowSeconds()), Duration.ofSeconds(config.slideSeconds())))
+				.window(SlidingEventTimeWindows.of(Duration.ofSeconds(config.windowSeconds()), Duration.ofSeconds(config.slideSeconds())))
 				.aggregate(new SessionFeatureAggregator(), new FeatureWindowFunction(config.windowSeconds()));
 
 		DataStream<Verdict> verdicts = features

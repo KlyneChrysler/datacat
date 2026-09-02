@@ -2,10 +2,7 @@ package domain
 
 import "time"
 
-// DefaultPersonas is the registry (file taxonomy, standards rule 2): the
-// three standard actors the classifier must separate. Adding a persona
-// means adding an entry here — nothing else changes. agentCred, when
-// non-nil, lets the polite agent sign its requests as a verified agent.
+// DefaultPersonas is the registry of standard actors, one entry per persona.
 func DefaultPersonas(agentCred *AgentCredential) []Persona {
 	return []Persona{
 		{

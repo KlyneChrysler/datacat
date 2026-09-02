@@ -10,11 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 
-/**
- * Decodes the Go wire format (pkg/events RequestEvent, snake_case JSON).
- * A malformed record is logged and skipped (returns null) — one poison
- * message must never crash the job.
- */
+/** Decodes the Go wire format, skipping malformed records. */
 public final class RequestEventDeserializer implements DeserializationSchema<RequestEvent> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RequestEventDeserializer.class);

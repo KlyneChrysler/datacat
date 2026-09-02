@@ -9,7 +9,7 @@ version catalogs; Spotless + Checkstyle + Error Prone are CI gates.
 
 ---
 
-# Part 1 — policy-service (Spring Boot)
+# Part 1 - policy-service (Spring Boot)
 
 ## Layout
 
@@ -17,7 +17,7 @@ version catalogs; Spotless + Checkstyle + Error Prone are CI gates.
 services/policy-service/src/main/java/io/datacat/policy/
 ├── PolicyServiceApplication.java
 ├── api/            controllers + request/response records (adapters, HTTP)
-├── application/    services — use-case orchestrators
+├── application/    services - use-case orchestrators
 ├── domain/         entities-as-behavior, value objects, domain exceptions
 ├── infrastructure/ JPA repositories, Kafka publishers (adapters, out)
 └── config/         @ConfigurationProperties, bean wiring
@@ -28,7 +28,7 @@ and `domain`; never the reverse. `domain` imports no Spring, no JPA annotations
 where avoidable (persistence entities live in `infrastructure` and map to/from
 domain objects).
 
-## File taxonomy (rule 2, Java form) — unforgiving
+## File taxonomy (rule 2, Java form) - unforgiving
 
 Java's one-public-type-per-file rule is the floor, not the ceiling:
 
@@ -44,7 +44,7 @@ Java's one-public-type-per-file rule is the floor, not the ceiling:
   touches behavior files.
 - Private methods that are steps of the class's single task and kind stay.
 
-## Configuration (factor III) — typed, validated at startup
+## Configuration (factor III) - typed, validated at startup
 
 No `@Value` scattered through classes. One immutable record per concern:
 
@@ -60,7 +60,7 @@ public record PolicyProperties(
 ```
 
 ```yaml
-# application.yml — env indirection only, no literals that vary by deploy
+# application.yml - env indirection only, no literals that vary by deploy
 datacat:
   policy:
     rules-topic: ${RULES_TOPIC}
@@ -68,7 +68,7 @@ datacat:
     max-rules-per-tenant: ${MAX_RULES_PER_TENANT:100}
 ```
 
-Startup fails if a required variable is missing — that is the desired behavior.
+Startup fails if a required variable is missing - that is the desired behavior.
 
 ## Dependency injection
 
@@ -108,7 +108,7 @@ public class RuleController {
 ```
 
 ```java
-// api/CreateRuleRequest.java — validation at the boundary, immutable record
+// api/CreateRuleRequest.java - validation at the boundary, immutable record
 public record CreateRuleRequest(
 		@NotBlank String name,
 		@NotNull Classification appliesTo,
@@ -122,7 +122,7 @@ public record CreateRuleRequest(
 ```
 
 ```java
-// application/RuleService.java — orchestrator: each line delegates
+// application/RuleService.java - orchestrator: each line delegates
 @Service
 public class RuleService {
 
@@ -152,7 +152,7 @@ public class RuleService {
 ## Domain objects carry behavior, not just data
 
 ```java
-// domain/Rule.java — invariants enforced in the factory, object is immutable
+// domain/Rule.java - invariants enforced in the factory, object is immutable
 public record Rule(UUID id, String name, Classification appliesTo,
 		ActionType action, int rateLimitPerMinute, Instant createdAt) {
 
@@ -174,7 +174,7 @@ public record Rule(UUID id, String name, Classification appliesTo,
 }
 ```
 
-## Errors — one global handler, no leaked internals
+## Errors - one global handler, no leaked internals
 
 ```java
 // api/ApiExceptionHandler.java
@@ -201,7 +201,7 @@ public class ApiExceptionHandler {
 ## JPA rules
 
 - Persistence entities live in `infrastructure/`, mapped to/from domain records
-  by a dedicated mapper class — JPA annotations never touch `domain/`.
+  by a dedicated mapper class - JPA annotations never touch `domain/`.
 - No bidirectional relationships unless proven necessary; prefer IDs across
   aggregates.
 - `FetchType.LAZY` everywhere; queries that need more use explicit
@@ -234,9 +234,9 @@ void createPublishesEventAfterSave() {
 
 ---
 
-# Part 2 — classifier-job (Apache Flink)
+# Part 2 - classifier-job (Apache Flink)
 
-## Layout — one class per operator
+## Layout - one class per operator
 
 ```
 services/classifier-job/src/main/java/io/datacat/classifier/
@@ -260,7 +260,7 @@ operators are never edited (open/closed).
 ## Job assembly reads like the dataflow diagram
 
 ```java
-// ClassifierJob.java — orchestrator: every statement is one pipeline step
+// ClassifierJob.java - orchestrator: every statement is one pipeline step
 public final class ClassifierJob {
 
 	public static void main(String[] args) throws Exception {
@@ -290,7 +290,7 @@ public final class ClassifierJob {
 ## Operator rules
 
 - Every operator is its own class with a single responsibility and its own
-  unit tests (operators are plain classes — test them without a cluster).
+  unit tests (operators are plain classes - test them without a cluster).
 - Keyed state is declared in `open()`, typed via `ValueStateDescriptor` /
   `MapStateDescriptor`, and every state has a TTL (sessions end; state must
   not grow forever).
@@ -340,10 +340,10 @@ public final class VerdictAssembler extends KeyedProcessFunction<String, Session
 }
 ```
 
-## Checkpointing — non-negotiable settings
+## Checkpointing - non-negotiable settings
 
 ```java
-// config/Environments.java — Flink 2.x API (verified against 2.2.1):
+// config/Environments.java - Flink 2.x API (verified against 2.2.1):
 // checkpoint storage is set via Configuration, not CheckpointConfig.
 public static StreamExecutionEnvironment checkpointed(JobConfig config) {
 	Configuration conf = new Configuration();
@@ -368,7 +368,7 @@ end-to-end behavior is effectively-once.
 - Operators: plain unit tests + `KeyedOneInputStreamOperatorTestHarness` for
   state/timer behavior.
 - Job topology: `MiniClusterWithClientResource` integration test with bounded
-  test sources — runs in CI, no real Kafka needed.
+  test sources - runs in CI, no real Kafka needed.
 - A golden-path test replays a recorded human session and a scraper session
   and asserts the classifier separates them; this doubles as the accuracy
   regression gate.

@@ -1,5 +1,4 @@
-// Package ports holds the interfaces edge-proxy consumes. Implementations
-// live in adapters and meet these contracts only in the composition root.
+// Package ports holds the interfaces edge proxy consumes.
 package ports
 
 import (
@@ -13,6 +12,6 @@ type EventPublisher interface {
 }
 
 type DecisionSource interface {
-	// Consume blocks, invoking handle for each decision until ctx is done.
+	// Consume handles each decision until ctx ends.
 	Consume(ctx context.Context, handle func(events.Decision)) error
 }

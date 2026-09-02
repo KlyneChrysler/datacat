@@ -12,8 +12,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/ident"
 )
 
-// Request → wire conversion only (file taxonomy, standards rule 2).
-
+// eventFrom converts one request into its wire event.
 func eventFrom(r *http.Request) events.RequestEvent {
 	return events.RequestEvent{
 		SessionID:      ident.SessionID(r),
@@ -23,20 +22,19 @@ func eventFrom(r *http.Request) events.RequestEvent {
 		ClientIP:       ident.ClientIP(r),
 		UserAgent:      r.UserAgent(),
 		HeaderOrder:    headerOrderHash(r),
-		TLSFingerprint: "", // requires raw ClientHello capture; later phase
+		TLSFingerprint: "",
 		VerifiedAgent:  agentauth.Verified(r.Context()),
 	}
 }
 
-// headerOrderHash approximates a header fingerprint. net/http stores headers
-// in a map, losing wire order, so this hashes the sorted name set; true
-// wire-order capture needs a lower-level listener (later phase).
-// O(h log h) in header count, bounded by the server's header limits.
+// headerOrderHash fingerprints the sorted header name set.
 func headerOrderHash(r *http.Request) string {
 	names := make([]string, 0, len(r.Header))
 	for name := range r.Header {
 		names = append(names, name)
 	}
+
 	slices.Sort(names)
+
 	return hashx.Short(strings.Join(names, ","))
 }

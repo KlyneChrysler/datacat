@@ -1,6 +1,4 @@
-// Package ident resolves a request to a session identity. Both the observe
-// (event emission) and gate (enforcement) adapters use it, so a session is
-// identified identically on the way in and on the way out.
+// Package ident resolves a request to a session identity.
 package ident
 
 import (
@@ -11,15 +9,15 @@ import (
 	"github.com/KlyneChrysler/datacat/pkg/hashx"
 )
 
-// SessionCookie re-exports the wire-contract cookie name for gate/observe.
+// SessionCookie re-exports the wire contract cookie name.
 const SessionCookie = events.SessionCookie
 
-// SessionID prefers the session cookie; without one it falls back to a
-// fingerprint of IP + User-Agent so anonymous traffic still groups. O(1).
+// SessionID uses the session cookie, else a fingerprint of ip and agent.
 func SessionID(r *http.Request) string {
 	if cookie, err := r.Cookie(SessionCookie); err == nil && cookie.Value != "" {
 		return cookie.Value
 	}
+
 	return hashx.Short(ClientIP(r) + "|" + r.UserAgent())
 }
 
@@ -28,5 +26,6 @@ func ClientIP(r *http.Request) string {
 	if err != nil {
 		return r.RemoteAddr
 	}
+
 	return host
 }

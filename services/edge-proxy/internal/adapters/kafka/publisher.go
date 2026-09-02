@@ -1,5 +1,4 @@
-// Package kafka is the outbound event adapter: RequestEvents → Kafka,
-// partitioned by session ID so per-session ordering holds downstream.
+// Package kafka holds the edge proxy Kafka adapters.
 package kafka
 
 import (
@@ -12,6 +11,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/ports"
 )
 
+// EventPublisher sends request events keyed by session.
 type EventPublisher struct {
 	producer *kafkax.Producer
 	topic    string
@@ -28,5 +28,6 @@ func (p *EventPublisher) PublishRequest(ctx context.Context, ev events.RequestEv
 	if err != nil {
 		return fmt.Errorf("marshal request event: %w", err)
 	}
+
 	return p.producer.Publish(ctx, p.topic, []byte(ev.SessionID), payload)
 }

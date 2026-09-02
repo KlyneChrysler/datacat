@@ -10,39 +10,43 @@ import (
 
 type Middleware func(http.Handler) http.Handler
 
-// WithMiddleware applies middleware left-to-right: the first argument is the
-// outermost wrapper.
+// WithMiddleware wraps h so the first middleware runs outermost.
 func WithMiddleware(h http.Handler, mws ...Middleware) http.Handler {
 	for i := len(mws) - 1; i >= 0; i-- {
 		h = mws[i](h)
 	}
+
 	return h
 }
 
+// RequestID tags every request with a fresh id.
 func RequestID() Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			id := newRequestID()
+
 			w.Header().Set("X-Request-ID", id)
 			r.Header.Set("X-Request-ID", id)
+
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
+// Logging writes one structured line per request.
 func Logging(log *slog.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
+
 			next.ServeHTTP(w, r)
-			log.InfoContext(r.Context(), "request",
-				"method", r.Method, "path", r.URL.Path,
-				"duration_ms", time.Since(start).Milliseconds(),
-				"request_id", r.Header.Get("X-Request-ID"))
+
+			log.InfoContext(r.Context(), "request", "method", r.Method, "path", r.URL.Path, "duration_ms", time.Since(start).Milliseconds(), "request_id", r.Header.Get("X-Request-ID"))
 		})
 	}
 }
 
+// Recover turns panics into 500 responses instead of crashes.
 func Recover(log *slog.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,6 +56,7 @@ func Recover(log *slog.Logger) Middleware {
 					Error(w, http.StatusInternalServerError, "internal error")
 				}
 			}()
+
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -60,5 +65,6 @@ func Recover(log *slog.Logger) Middleware {
 func newRequestID() string {
 	buf := make([]byte, 8)
 	_, _ = rand.Read(buf) // rand.Read never fails per its contract
+
 	return hex.EncodeToString(buf)
 }

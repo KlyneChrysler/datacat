@@ -2,11 +2,10 @@ package events
 
 import "time"
 
-// Verdict is emitted by classifier-job for every classification change.
-// Partition key: SessionID.
+// Verdict is one classification change, keyed by session.
 type Verdict struct {
 	SessionID      string    `json:"session_id"`
 	Timestamp      time.Time `json:"timestamp"`
-	Classification string    `json:"classification"` // human | verified_agent | unverified_automation | abusive
-	Confidence     float64   `json:"confidence"`     // [0,1]
+	Classification string    `json:"classification"`
+	Confidence     float64   `json:"confidence"`
 }

@@ -4,7 +4,7 @@ Vite + React, JavaScript with JSDoc types (per global convention: `.jsx` for
 JSX files, `.js` otherwise, tabs, semicolons, double quotes). ESLint + Prettier
 are CI gates.
 
-## Layout — by feature, not by type
+## Layout - by feature, not by type
 
 ```
 web/dashboard/src/
@@ -26,23 +26,23 @@ web/dashboard/src/
 └── styles/
 ```
 
-Rules mirror the backend: a feature folder is a hexagonal cell — `*Api.js` is
+Rules mirror the backend: a feature folder is a hexagonal cell - `*Api.js` is
 its adapter, hooks are its application layer, components are its presentation.
 Cross-feature imports go through `components/`, `hooks/`, or `lib/` only.
 
-## File taxonomy (rule 2, React form) — unforgiving
+## File taxonomy (rule 2, React form) - unforgiving
 
 - One component per file, named after it. A second component defined in the
-  same file — however small — is a defect.
+  same file - however small - is a defect.
 - Error classes, envelope/unwrap logic, and URL helpers are separate kinds
   from the client that uses them: `lib/apiError.js`, `lib/envelope.js`,
-  `lib/url.js` — never inline in `apiClient.js`.
+  `lib/url.js` - never inline in `apiClient.js`.
 - Data fetching lives only in hooks; formatting/pure helpers only in `lib/`;
   a `fetch` or a date-format function inside a component file is a defect.
 
 ## The three-layer split inside a feature
 
-**1. Adapter — the only place that knows HTTP:**
+**1. Adapter - the only place that knows HTTP:**
 
 ```js
 // features/traffic/trafficApi.js
@@ -53,7 +53,7 @@ export function fetchTrafficSummary({ windowMinutes }) {
 }
 ```
 
-**2. Hook — the only place that knows server state:**
+**2. Hook - the only place that knows server state:**
 
 ```js
 // features/traffic/useTrafficSummary.js
@@ -69,7 +69,7 @@ export function useTrafficSummary(windowMinutes) {
 }
 ```
 
-**3. Component — rendering only, ≤ 100 lines target, 150 cap:**
+**3. Component - rendering only, ≤ 100 lines target, 150 cap:**
 
 ```jsx
 // features/traffic/TrafficOverview.jsx
@@ -85,14 +85,14 @@ export default function TrafficOverview() {
 
 	return (
 		<section>
-			<h2>Traffic — last 15 minutes</h2>
+			<h2>Traffic - last 15 minutes</h2>
 			<ClassificationChart summary={data} />
 		</section>
 	);
 }
 ```
 
-A component that fetches, transforms, AND renders is doing three jobs — split it.
+A component that fetches, transforms, AND renders is doing three jobs - split it.
 
 ## Server state vs UI state
 
@@ -103,7 +103,7 @@ A component that fetches, transforms, AND renders is doing three jobs — split 
 - No global state library until proven necessary (YAGNI). Cross-cutting values
   (theme, auth) use context created in `main.jsx`.
 
-## The API client — one envelope, one error shape
+## The API client - one envelope, one error shape
 
 ```js
 // lib/apiClient.js
@@ -134,7 +134,7 @@ export const apiClient = {
 };
 ```
 
-Every error surfaces to the user through `ErrorPanel` — no silently blank
+Every error surfaces to the user through `ErrorPanel` - no silently blank
 widgets, no `console.error`-and-continue.
 
 ## Config (factor III)
@@ -151,7 +151,7 @@ State updates always produce new objects/arrays (spread, `map`, `filter`,
 ## Testing
 
 - Vitest + React Testing Library. Test behavior through the DOM, not
-  implementation details — no snapshot-everything.
+  implementation details - no snapshot-everything.
 - Hooks with server state: mock at the fetch boundary (MSW), not the hook.
 - Pure helpers in `lib/` get plain unit tests.
 

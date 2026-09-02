@@ -1,4 +1,4 @@
-// Package app holds edge-proxy use cases.
+// Package app holds edge proxy use cases.
 package app
 
 import (
@@ -10,10 +10,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/ports"
 )
 
-// Recorder decouples the hot request path from Kafka: Record never blocks
-// and never fails a request; events flow to the publisher on a background
-// goroutine. When the buffer is full the event is dropped and counted —
-// observability must never take down the traffic it observes.
+// Recorder queues events without ever blocking or failing a request.
 type Recorder struct {
 	publisher ports.EventPublisher
 	log       *slog.Logger
@@ -22,14 +19,10 @@ type Recorder struct {
 }
 
 func NewRecorder(publisher ports.EventPublisher, log *slog.Logger, bufferSize int) *Recorder {
-	return &Recorder{
-		publisher: publisher,
-		log:       log,
-		queue:     make(chan events.RequestEvent, bufferSize),
-	}
+	return &Recorder{publisher: publisher, log: log, queue: make(chan events.RequestEvent, bufferSize)}
 }
 
-// Record enqueues an event without blocking the caller.
+// Record enqueues an event, dropping it when the queue is full.
 func (r *Recorder) Record(ev events.RequestEvent) {
 	select {
 	case r.queue <- ev:
@@ -38,7 +31,7 @@ func (r *Recorder) Record(ev events.RequestEvent) {
 	}
 }
 
-// Run publishes queued events until ctx is cancelled.
+// Run publishes queued events until ctx ends.
 func (r *Recorder) Run(ctx context.Context) error {
 	for {
 		select {
@@ -58,5 +51,6 @@ func (r *Recorder) publish(ctx context.Context, ev events.RequestEvent) {
 
 func (r *Recorder) countDrop(ev events.RequestEvent) {
 	total := r.dropped.Add(1)
-	r.log.Warn("event queue full; event dropped", "session_id", ev.SessionID, "dropped_total", total)
+
+	r.log.Warn("event queue full, event dropped", "session_id", ev.SessionID, "dropped_total", total)
 }

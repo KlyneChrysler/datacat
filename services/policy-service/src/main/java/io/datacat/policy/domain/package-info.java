@@ -1,5 +1,2 @@
-/**
- * Pure business logic: immutable records with behavior and enforced
- * invariants. Imports no Spring, no JPA, no infrastructure.
- */
+/** Pure business logic, immutable records with invariants. */
 package io.datacat.policy.domain;

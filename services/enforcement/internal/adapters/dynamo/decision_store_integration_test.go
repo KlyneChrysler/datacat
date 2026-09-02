@@ -1,7 +1,6 @@
 //go:build integration
 
-// Integration test against DynamoDB Local: docker compose up -d dynamodb,
-// then `go test -tags integration ./internal/adapters/dynamo/`.
+// Integration tests need docker compose up -d dynamodb, run with -tags integration.
 package dynamo
 
 import (

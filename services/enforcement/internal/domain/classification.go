@@ -1,5 +1,4 @@
-// Package domain holds pure business logic. It imports zero infrastructure.
-// One concept per file (file taxonomy, standards rule 2).
+// Package domain holds pure business logic with zero infra imports.
 package domain
 
 type Classification string

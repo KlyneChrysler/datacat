@@ -1,13 +1,7 @@
 package io.datacat.classifier.config;
 
-/**
- * All job parameters come from the environment (twelve-factor III) and are
- * validated here; a missing variable fails the job at submission, not
- * mid-run. The record owns its invariants; generic env reading lives in Env.
- */
-public record JobConfig(String kafkaBrokers, String requestsTopic, String verdictsTopic,
-		String consumerGroup, String checkpointUri, long checkpointIntervalMs,
-		long windowSeconds, long slideSeconds) {
+/** All job parameters, read from the environment and validated at once. */
+public record JobConfig(String kafkaBrokers, String requestsTopic, String verdictsTopic, String consumerGroup, String checkpointUri, long checkpointIntervalMs, long windowSeconds, long slideSeconds) {
 
 	public JobConfig {
 		require(kafkaBrokers, "KAFKA_BROKERS");

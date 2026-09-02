@@ -1,6 +1,4 @@
-// Command sim is the traffic-sim composition root: wiring and lifecycle
-// only. It drives the persona registry against the target until SIGTERM or
-// the configured duration.
+// Command sim is the traffic sim composition root.
 package main
 
 import (
@@ -42,20 +40,23 @@ func run() error {
 
 	personas := domain.DefaultPersonas(agentCredential(cfg, log))
 	simulator := app.NewSimulator(httpsender.NewSender(cfg.TargetURL), log, personas)
+
 	log.Info("starting", "target", cfg.TargetURL, "duration", cfg.Duration.String())
+
 	return simulator.Run(ctx)
 }
 
-// agentCredential derives the polite agent's signing key from the seed
-// (wiring): the proxy registers the printed public key via AGENT_KEYS.
+// agentCredential derives the signing key from the seed, nil when unset.
 func agentCredential(cfg config.Config, log *slog.Logger) *domain.AgentCredential {
 	if cfg.AgentKeySeed == "" {
 		return nil
 	}
+
 	seed := sha256.Sum256([]byte(cfg.AgentKeySeed))
 	key := ed25519.NewKeyFromSeed(seed[:])
-	log.Info("agent signing enabled", "key_id", "sim-agent-key",
-		"public_key", hex.EncodeToString(key.Public().(ed25519.PublicKey)))
+
+	log.Info("agent signing enabled", "key_id", "sim-agent-key", "public_key", hex.EncodeToString(key.Public().(ed25519.PublicKey)))
+
 	return &domain.AgentCredential{KeyID: "sim-agent-key", Key: key}
 }
 
@@ -63,5 +64,6 @@ func withOptionalDeadline(ctx context.Context, cfg config.Config) (context.Conte
 	if cfg.Duration <= 0 {
 		return context.WithCancel(ctx)
 	}
+
 	return context.WithTimeout(ctx, cfg.Duration)
 }

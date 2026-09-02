@@ -5,33 +5,26 @@ import (
 	"time"
 )
 
-// Persona describes one synthetic traffic actor: who it claims to be, how
-// fast it moves, and how it navigates. Fields are set once; mutable
-// navigation state lives inside its PathSource.
+// Persona is one synthetic traffic actor.
 type Persona struct {
 	Name       string
 	SessionID  string
 	UserAgent  string
 	BaseDelay  time.Duration
-	Jitter     time.Duration // uniform extra delay in [0, Jitter)
+	Jitter     time.Duration
 	Paths      PathSource
-	Credential *AgentCredential // nil: persona does not sign
+	Credential *AgentCredential
 }
 
 func (p Persona) NextRequest() Request {
-	return Request{
-		SessionID:  p.SessionID,
-		Path:       p.Paths.Next(),
-		UserAgent:  p.UserAgent,
-		Credential: p.Credential,
-	}
+	return Request{SessionID: p.SessionID, Path: p.Paths.Next(), UserAgent: p.UserAgent, Credential: p.Credential}
 }
 
-// NextDelay returns the pause before the next request: BaseDelay plus
-// uniform jitter. A metronome persona simply sets Jitter near zero.
+// NextDelay is the base delay plus uniform jitter.
 func (p Persona) NextDelay() time.Duration {
 	if p.Jitter <= 0 {
 		return p.BaseDelay
 	}
+
 	return p.BaseDelay + rand.N(p.Jitter)
 }

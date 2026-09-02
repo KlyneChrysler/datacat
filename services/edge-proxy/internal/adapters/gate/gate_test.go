@@ -18,15 +18,15 @@ func testChallenger() *app.Challenger {
 
 func gatedHandler(t *testing.T, action string, burst int) http.Handler {
 	t.Helper()
+
 	gatekeeper := app.NewGatekeeper(time.Hour)
 	if action != "" {
 		gatekeeper.Update(events.Decision{SessionID: "s-1", Action: action})
 	}
-	limiter := app.NewRateLimiter(60, burst, time.Hour)
-	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	return Middleware(gatekeeper, limiter, testChallenger(), obsx.NewLogger("test"))(next)
+	gate := New(gatekeeper, app.NewRateLimiter(60, burst, time.Hour), testChallenger(), obsx.NewLogger("test"))
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+
+	return gate.Middleware()(next)
 }
 
 func send(handler http.Handler, extras ...*http.Cookie) int {
@@ -42,8 +42,10 @@ func sendWith(handler http.Handler, accept string, extras ...*http.Cookie) int {
 	if accept != "" {
 		r.Header.Set("Accept", accept)
 	}
+
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, r)
+
 	return w.Code
 }
 
@@ -59,6 +61,7 @@ func TestGate(t *testing.T) {
 		{name: "rate limited session passes within burst", action: "rate_limit", wantStatus: http.StatusOK},
 		{name: "unknown session passes", action: "", wantStatus: http.StatusOK},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := send(gatedHandler(t, tt.action, 3)); got != tt.wantStatus {
@@ -93,16 +96,14 @@ func TestGatePassesChallengedSessionWithValidClearance(t *testing.T) {
 	gatekeeper := app.NewGatekeeper(time.Hour)
 	gatekeeper.Update(events.Decision{SessionID: "s-1", Action: "challenge"})
 	challenger := testChallenger()
-	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	handler := Middleware(gatekeeper, app.NewRateLimiter(60, 3, time.Hour), challenger,
-		obsx.NewLogger("test"))(next)
-	clearance := &http.Cookie{Name: app.ClearanceCookie, Value: challenger.MintClearance("s-1", time.Now())}
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+	handler := New(gatekeeper, app.NewRateLimiter(60, 3, time.Hour), challenger, obsx.NewLogger("test")).Middleware()(next)
 
+	clearance := &http.Cookie{Name: app.ClearanceCookie, Value: challenger.MintClearance("s-1", time.Now())}
 	if got := send(handler, clearance); got != http.StatusOK {
 		t.Errorf("status = %d, want 200 for cleared session", got)
 	}
+
 	forged := &http.Cookie{Name: app.ClearanceCookie, Value: "forged"}
 	if got := send(handler, forged); got != http.StatusTooManyRequests {
 		t.Errorf("status = %d, want 429 for forged clearance", got)

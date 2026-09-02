@@ -20,26 +20,29 @@ func New(enforcer *app.Enforcer, log *slog.Logger) *Handlers {
 	return &Handlers{enforcer: enforcer, log: log}
 }
 
-// Health reports the process is alive (liveness probe).
+// Health answers the liveness probe.
 func (h *Handlers) Health(w http.ResponseWriter, _ *http.Request) {
 	httpx.JSON(w, http.StatusOK, map[string]string{"status": "alive"})
 }
 
-// Ready reports dependencies are reachable (readiness probe). Dependency
-// checks are added as adapters arrive (Kafka, DynamoDB).
+// Ready answers the readiness probe.
 func (h *Handlers) Ready(w http.ResponseWriter, _ *http.Request) {
 	httpx.JSON(w, http.StatusOK, map[string]string{"status": "ready"})
 }
 
+// GetTrafficSummary serves classification counts for a recent window.
 func (h *Handlers) GetTrafficSummary(w http.ResponseWriter, r *http.Request) {
 	windowMinutes := parseWindowMinutes(r.URL.Query().Get("windowMinutes"))
 	summary := h.enforcer.TrafficSummary(windowMinutes)
+
 	httpx.JSON(w, http.StatusOK, toTrafficSummaryResponse(summary))
 }
 
+// GetDecision serves the standing decision for one session.
 func (h *Handlers) GetDecision(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.PathValue("sessionID")
 	decision, err := h.enforcer.Lookup(r.Context(), sessionID)
+
 	switch {
 	case errors.Is(err, domain.ErrDecisionNotFound):
 		httpx.Error(w, http.StatusNotFound, "no decision for session")
@@ -50,13 +53,14 @@ func (h *Handlers) GetDecision(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// parseWindowMinutes accepts a boundary value leniently: the Tally clamps to
-// its valid range, so any unparsable input falls back to the default window.
+// parseWindowMinutes falls back to the default window on bad input.
 func parseWindowMinutes(raw string) int {
 	const defaultWindow = 15
+
 	minutes, err := strconv.Atoi(raw)
 	if err != nil {
 		return defaultWindow
 	}
+
 	return minutes
 }

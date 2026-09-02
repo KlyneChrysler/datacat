@@ -3,13 +3,8 @@ package io.datacat.classifier.operators;
 import io.datacat.classifier.model.RequestEvent;
 import org.apache.flink.api.common.functions.AggregateFunction;
 
-/**
- * Incremental per-window accumulation: Flink folds each event into the
- * accumulator as it arrives, so window state stays small. Feature assembly
- * (which needs the key and window bounds) happens in FeatureWindowFunction.
- */
-public final class SessionFeatureAggregator
-		implements AggregateFunction<RequestEvent, FeatureAccumulator, FeatureAccumulator> {
+/** Folds each event into the window accumulator as it arrives. */
+public final class SessionFeatureAggregator implements AggregateFunction<RequestEvent, FeatureAccumulator, FeatureAccumulator> {
 
 	@Override
 	public FeatureAccumulator createAccumulator() {

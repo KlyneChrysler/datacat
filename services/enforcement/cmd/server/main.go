@@ -1,5 +1,4 @@
-// Command server is the enforcement composition root: wiring and lifecycle
-// only. Concrete types meet here and nowhere else.
+// Command server is the enforcement composition root.
 package main
 
 import (
@@ -51,34 +50,38 @@ func run() error {
 		return err
 	}
 	defer producer.Close()
-
 	store, err := newDecisionStore(ctx, cfg, log)
 	if err != nil {
 		return err
 	}
+
 	publisher := kafka.NewDecisionPublisher(producer, cfg.DecisionsTopic)
 	enforcer := app.NewEnforcer(domain.DefaultPolicy(), store, publisher, actions.NewLogApplier(log), app.NewTally())
 	source := kafka.NewVerdictSource(consumer)
-	server := httpx.NewServer(cfg.Port, httpapi.NewRouter(httpapi.New(enforcer, log), log, cfg.CORSOrigin), cfg.ShutdownTimeout)
+	router := httpapi.NewRouter(httpapi.New(enforcer, log), log, cfg.CORSOrigin)
+	server := httpx.NewServer(cfg.Port, router, cfg.ShutdownTimeout)
 
 	log.Info("starting", "port", cfg.Port, "topic", cfg.VerdictsTopic, "group", cfg.ConsumerGroup)
+
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return source.Consume(ctx, enforcer.HandleVerdict) })
 	g.Go(func() error { return server.ListenAndServe(ctx) })
+
 	return g.Wait()
 }
 
-// newDecisionStore selects the store adapter from config (wiring only):
-// DynamoDB when a table is configured, in-memory otherwise.
+// newDecisionStore selects DynamoDB when a table is configured.
 func newDecisionStore(ctx context.Context, cfg config.Config, log *slog.Logger) (ports.DecisionStore, error) {
 	if cfg.DecisionsTable == "" {
 		log.Info("decision store: in-memory (single replica only)")
 		return memory.NewDecisionStore(), nil
 	}
+
 	client, err := dynamo.NewClient(ctx, cfg.DynamoEndpoint)
 	if err != nil {
 		return nil, err
 	}
+
 	log.Info("decision store: dynamodb", "table", cfg.DecisionsTable)
 	return dynamo.NewDecisionStore(client, cfg.DecisionsTable, cfg.DecisionTTL), nil
 }

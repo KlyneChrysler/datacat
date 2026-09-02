@@ -1,6 +1,4 @@
-// Package actions applies enforcement decisions. This phase logs them; the
-// edge-proxy callback (actually blocking/challenging traffic) arrives when
-// the verdict loop closes end to end.
+// Package actions applies enforcement decisions, currently by logging them.
 package actions
 
 import (
@@ -22,7 +20,7 @@ func NewLogApplier(log *slog.Logger) *LogApplier {
 }
 
 func (a *LogApplier) Apply(ctx context.Context, d domain.Decision) error {
-	a.log.InfoContext(ctx, "decision applied",
-		"session_id", d.SessionID, "class", d.Class, "action", d.Action)
+	a.log.InfoContext(ctx, "decision applied", "session_id", d.SessionID, "class", d.Class, "action", d.Action)
+
 	return nil
 }

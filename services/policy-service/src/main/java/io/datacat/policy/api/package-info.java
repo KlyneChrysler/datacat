@@ -1,5 +1,2 @@
-/**
- * Inbound HTTP adapters: controllers and request/response records. Thin —
- * parse, delegate to {@code application}, map. No business logic.
- */
+/** Inbound HTTP adapters, thin controllers and wire records. */
 package io.datacat.policy.api;

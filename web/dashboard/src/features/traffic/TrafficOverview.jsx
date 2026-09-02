@@ -13,7 +13,7 @@ export default function TrafficOverview() {
 
 	return (
 		<section>
-			<h2>Sessions classified — last {data.window_minutes} minutes</h2>
+			<h2>Sessions classified - last {data.window_minutes} minutes</h2>
 			<div className="view-toggle" role="group" aria-label="View as">
 				<button aria-pressed={view === "chart"} onClick={() => setView("chart")}>
 					Chart

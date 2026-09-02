@@ -10,8 +10,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
-// DecisionPublisher is the outbound decision adapter: domain Decisions →
-// Kafka, partitioned by session ID.
+// DecisionPublisher sends decisions keyed by session.
 type DecisionPublisher struct {
 	producer *kafkax.Producer
 	topic    string
@@ -28,5 +27,6 @@ func (p *DecisionPublisher) PublishDecision(ctx context.Context, d domain.Decisi
 	if err != nil {
 		return fmt.Errorf("marshal decision: %w", err)
 	}
+
 	return p.producer.Publish(ctx, p.topic, []byte(d.SessionID), payload)
 }

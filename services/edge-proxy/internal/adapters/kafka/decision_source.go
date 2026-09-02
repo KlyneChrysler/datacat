@@ -10,8 +10,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/ports"
 )
 
-// DecisionSource is the inbound decision adapter: Kafka records → decisions
-// for the gatekeeper.
+// DecisionSource feeds decisions from Kafka to the gatekeeper.
 type DecisionSource struct {
 	consumer *kafkax.Consumer
 }
@@ -28,6 +27,7 @@ func (s *DecisionSource) Consume(ctx context.Context, handle func(events.Decisio
 		if err := json.Unmarshal(value, &decision); err != nil {
 			return fmt.Errorf("decode decision: %w", err)
 		}
+
 		handle(decision)
 		return nil
 	})

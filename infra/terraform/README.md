@@ -1,10 +1,10 @@
-# Terraform (AWS phase — priority 1 and 4)
+# Terraform (AWS phase - priority 1 and 4)
 
 Layout per docs/standards/infra.md:
 
 ```
 modules/          reusable, environment-agnostic
-  bootstrap/      budget alarm — created BEFORE any other AWS resource   [built]
+  bootstrap/      budget alarm - created BEFORE any other AWS resource   [built]
   network/        VPC, 2 AZs, public/private subnets, single NAT         [built]
   dynamo/         tables, TTL, on-demand                                 [built, applied locally]
   storage/        S3 bucket, SSE, lifecycle, public-access block         [built]
@@ -12,8 +12,8 @@ modules/          reusable, environment-agnostic
   kafka/          MSK                                                    [AWS session]
   verdict-api/    Lambda + API Gateway                                   [AWS session]
 envs/
-  local/          DynamoDB Local target — applied and verified for $0
-  staging/        real AWS shape — validated; apply awaits credentials
+  local/          DynamoDB Local target - applied and verified for $0
+  staging/        real AWS shape - validated; apply awaits credentials
 ```
 
 Rules (binding): envs differ only in tfvars and backend config; env roots

@@ -1,6 +1,6 @@
 package httpapi
 
-// Wire shapes only (file taxonomy, standards rule 2).
+// Wire shapes for the HTTP API.
 
 type decisionResponse struct {
 	SessionID string `json:"session_id"`

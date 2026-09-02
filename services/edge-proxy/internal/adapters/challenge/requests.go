@@ -1,7 +1,6 @@
 package challenge
 
-// Wire shapes only (file taxonomy, standards rule 2).
-
+// verifyRequest is the wire shape of a solved proof.
 type verifyRequest struct {
 	Token string `json:"token"`
 	Nonce string `json:"nonce"`

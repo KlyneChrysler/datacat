@@ -5,11 +5,7 @@ import io.datacat.classifier.model.Verdict;
 import io.datacat.classifier.serde.VerdictSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 
-/**
- * Outbound edges of the job graph. At-least-once delivery is deliberate:
- * enforcement handles verdicts idempotently (keyed by session), so retries
- * are harmless and exactly-once transactions would buy latency for nothing.
- */
+/** Outbound edges of the job graph, at least once by design. */
 public final class Sinks {
 
 	private Sinks() {

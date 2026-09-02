@@ -1,5 +1,2 @@
-/**
- * Typed {@code @ConfigurationProperties} records (validated at startup,
- * twelve-factor III) and bean wiring — the Spring composition root.
- */
+/** Typed configuration records and bean wiring. */
 package io.datacat.policy.config;

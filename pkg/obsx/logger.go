@@ -1,5 +1,4 @@
-// Package obsx provides observability primitives shared by all datacat
-// services: structured JSON logging to stdout (twelve-factor XI).
+// Package obsx holds the shared logging setup.
 package obsx
 
 import (
@@ -7,10 +6,10 @@ import (
 	"os"
 )
 
-// NewLogger returns the canonical datacat logger: JSON lines on stdout,
-// tagged with the service name. The platform owns routing and retention.
+// NewLogger returns the standard JSON logger tagged with the service name.
 func NewLogger(service string) *slog.Logger {
 	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: levelFromEnv()})
+
 	return slog.New(handler).With("service", service)
 }
 
@@ -19,5 +18,6 @@ func levelFromEnv() slog.Level {
 	if err := level.UnmarshalText([]byte(os.Getenv("LOG_LEVEL"))); err != nil {
 		return slog.LevelInfo
 	}
+
 	return level
 }

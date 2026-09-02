@@ -9,6 +9,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
 
+// Enforcer turns verdicts into stored, published, applied decisions.
 type Enforcer struct {
 	policy    domain.Policy
 	store     ports.DecisionStore
@@ -17,15 +18,15 @@ type Enforcer struct {
 	tally     *Tally
 }
 
-func NewEnforcer(policy domain.Policy, store ports.DecisionStore,
-	publisher ports.DecisionPublisher, applier ports.ActionApplier, tally *Tally) *Enforcer {
+func NewEnforcer(policy domain.Policy, store ports.DecisionStore, publisher ports.DecisionPublisher, applier ports.ActionApplier, tally *Tally) *Enforcer {
 	return &Enforcer{policy: policy, store: store, publisher: publisher, applier: applier, tally: tally}
 }
 
-// HandleVerdict is an orchestrator: every line delegates.
+// HandleVerdict runs the full decision pipeline for one verdict.
 func (e *Enforcer) HandleVerdict(ctx context.Context, v domain.Verdict) error {
 	e.tally.Record(v.Class)
 	decision := e.policy.Decide(v)
+
 	if err := e.store.Save(ctx, decision); err != nil {
 		return fmt.Errorf("save decision for session %s: %w", v.SessionID, err)
 	}
@@ -35,6 +36,7 @@ func (e *Enforcer) HandleVerdict(ctx context.Context, v domain.Verdict) error {
 	if err := e.applier.Apply(ctx, decision); err != nil {
 		return fmt.Errorf("apply %s for session %s: %w", decision.Action, v.SessionID, err)
 	}
+
 	return nil
 }
 

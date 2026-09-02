@@ -7,8 +7,8 @@ code conflicts with these documents, the code is wrong.
 
 | Document | Covers |
 |---|---|
-| [twelve-factor.md](twelve-factor.md) | How datacat implements all 12 factors of https://12factor.net — binding |
-| [performance.md](performance.md) | The Big-O and allocation discipline — binding, hot paths are unforgiving |
+| [twelve-factor.md](twelve-factor.md) | How datacat implements all 12 factors of https://12factor.net - binding |
+| [performance.md](performance.md) | The Big-O and allocation discipline - binding, hot paths are unforgiving |
 | [go.md](go.md) | Go services: layout, hexagonal layers, config, errors, HTTP, concurrency, testing |
 | [java.md](java.md) | Spring Boot service and Flink job: OOP, DI, JPA, operators, checkpoints |
 | [react.md](react.md) | Dashboard SPA: structure, components, hooks, server state |
@@ -19,7 +19,7 @@ code conflicts with these documents, the code is wrong.
 ### 1. One task per unit
 
 Every function/method does exactly one thing. Two responsibilities means two
-functions — always, immediately, not "when it grows". The test: you can name
+functions - always, immediately, not "when it grows". The test: you can name
 it without "and". Depth of extraction is never an argument against
 extraction; layers of small, named units are the goal, not a cost.
 
@@ -27,7 +27,7 @@ extraction; layers of small, named units are the goal, not a cost.
 
 Every declaration has a KIND, and a file holds exactly one kind, serving
 exactly one purpose. A declaration of a different kind than the file's
-purpose MUST move to its own file — exported or unexported, large or small.
+purpose MUST move to its own file - exported or unexported, large or small.
 "It's only used here" and "it's related" do not exempt it.
 
 The kinds, and where each lives:
@@ -35,14 +35,14 @@ The kinds, and where each lives:
 | Kind | Examples | Lives in |
 |---|---|---|
 | Domain concept | `Verdict`, `Decision`, `Classification` | one file per concept in `domain/` (model layer) |
-| Wire shape / DTO | `decisionResponse`, request records, event schemas | its own shapes file (`responses.go`, `*_dto`, schema file) — never inside behavior files |
+| Wire shape / DTO | `decisionResponse`, request records, event schemas | its own shapes file (`responses.go`, `*_dto`, schema file) - never inside behavior files |
 | Interface / port | `DecisionStore`, `SignalScorer` | the ports/interface file of its consumer |
-| Mapper / codec | `toDecisionResponse`, `decodeVerdict`, `eventFrom` | its own mapper/codec file — conversion is a kind, not a helper |
+| Mapper / codec | `toDecisionResponse`, `decodeVerdict`, `eventFrom` | its own mapper/codec file - conversion is a kind, not a helper |
 | Behavior / implementation | handlers, stores, middleware flows, operators | one implementation per file, named after it |
-| Configuration | config shape, env loading | config files — shape and loading in separate files |
+| Configuration | config shape, env loading | config files - shape and loading in separate files |
 | Errors | sentinel errors, error types | the errors file of the layer |
 | Registry / constants | `Scorers.all()`, action tables | its own registry file |
-| Wiring | composition roots, routers, module calls | `main`, router, env roots — wiring only, nothing else |
+| Wiring | composition roots, routers, module calls | `main`, router, env roots - wiring only, nothing else |
 
 The single exception: a private leaf function that is a *step of the file's
 one task and the same kind* stays (e.g. a `deny` step inside the gate
@@ -61,9 +61,9 @@ or serves another purpose, it is a different kind and moves. There is no
 
 ```
 domain/     pure business logic, zero framework/infra imports
-ports/      interfaces only — "what I need", not "how it's done"
+ports/      interfaces only - "what I need", not "how it's done"
 app/        use cases (the orchestrators)
-adapters/   Kafka, DynamoDB, HTTP — implementations of ports
+adapters/   Kafka, DynamoDB, HTTP - implementations of ports
 ```
 
 Dependency rule: `adapters → ports → domain`, never the reverse. Domain
@@ -96,7 +96,7 @@ Java, `lib/` in React). A generic helper inside a service is a defect: if
 it is generic, it belongs to the shared layer; if it is not generic, it
 must be named for its specific task. The second copy of any logic is a
 build-stopping defect. (YAGNI still bounds *speculative* abstraction: do
-not build for imagined callers — but organizing existing code by kind is
+not build for imagined callers - but organizing existing code by kind is
 never speculative.)
 
 ### 9. Errors are handled, wrapped, and never swallowed
@@ -106,7 +106,7 @@ Empty catch blocks, `_ = err`, and log-and-forget on errors that matter
 are defects. An intentionally ignored error carries a comment saying why,
 every time.
 
-### 10. Size budgets — caps, not suggestions
+### 10. Size budgets - caps, not suggestions
 
 | Unit | Target | Hard cap |
 |---|---|---|
@@ -140,11 +140,26 @@ defect anywhere; every super-linear function carries a complexity comment.
 - Names say what, types say how. Booleans read as predicates.
 - Packages/modules are nouns, functions are verbs; no invented
   abbreviations (industry-standard ID, URL, TLS are fine).
-- One concept per file and the file is named after it — see rule 2.
+- One concept per file and the file is named after it - see rule 2.
 
-### 14. Git
+### 14. Comments: one line, plain words
 
-- Commits: `<type>: <description>` — lowercase imperative, ≤ 72 chars.
+Every comment is exactly one line, high level, in simple words. It says what
+the thing is for, never how it works. No em dashes anywhere in the repo,
+code or docs. A comment that needs a second line means the code needs a
+better name or a smaller function. Rewrite the code, not the comment.
+
+### 15. Declarations on one line, air inside methods
+
+Function and method signatures, record headers, and constructor calls never
+wrap parameters onto continuation lines, whatever the length. A call too
+long for one line gets named locals first, then a one line call. Builder
+chains and struct literals with named fields may stack. Inside any method
+longer than three lines, blank lines separate setup, action, and result.
+
+### 16. Git
+
+- Commits: `<type>: <description>` - lowercase imperative, ≤ 72 chars.
   Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`.
 - Branches: `<author>/<ticket>-<description>`.
 - Every PR: Goal, Summary, Design decisions, Edge cases, Files changed, Test plan.
