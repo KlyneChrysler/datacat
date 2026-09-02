@@ -1,0 +1,41 @@
+# OS / editor
+.DS_Store
+Icon?
+.idea/
+.vscode/
+*.swp
+
+# Env / secrets — never committed (factor III)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+kubeconfig*
+
+# Go
+bin/
+coverage.out
+
+# Java / Gradle
+.gradle/
+build/
+out/
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl.backup
+crash.log
+
+# Flink / local data
+checkpoints/
+/tmp/
