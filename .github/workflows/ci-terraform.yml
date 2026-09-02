@@ -1,0 +1,24 @@
+name: ci-terraform
+
+on:
+  push:
+    branches: [main]
+    paths: ["infra/terraform/**", ".github/workflows/ci-terraform.yml"]
+  pull_request:
+    paths: ["infra/terraform/**", ".github/workflows/ci-terraform.yml"]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [local, staging]
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform -chdir=envs/${{ matrix.env }} init -backend=false -input=false
+      - run: terraform -chdir=envs/${{ matrix.env }} validate

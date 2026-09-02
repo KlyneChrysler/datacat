@@ -77,12 +77,9 @@ services:
     ports:
       - "8000:8000"
 
-  localstack:
-    image: localstack/localstack:latest
-    environment:
-      SERVICES: s3,lambda,stepfunctions,iam
-    ports:
-      - "4566:4566"
+  # NOTE: LocalStack was removed - it now requires an auth token even for
+  # community usage. DynamoDB Local (above) covers the local Terraform env;
+  # S3/Lambda/Step Functions are exercised against real AWS in staging.
 
   # Keep this tag in sync with flinkVersion in services/classifier-job/build.gradle.kts
   # The classifier env is read by `flink run` at submission (JobConfig.fromEnv).
