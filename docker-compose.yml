@@ -39,6 +39,7 @@ services:
       VERDICTS_TOPIC: datacat.verdicts
       DECISIONS_TOPIC: datacat.decisions
       CONSUMER_GROUP: enforcement
+      CORS_ORIGIN: http://localhost:5173
       LOG_LEVEL: info
       # Uncomment to switch the decision store from in-memory to DynamoDB
       # Local (create the table first: infra/terraform/envs/local apply).

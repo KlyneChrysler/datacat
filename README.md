@@ -1,81 +1,130 @@
 # datacat
 
-Real-time traffic classification platform: tells **humans**, **verified AI agents**, and **abusive automation** apart on live web traffic, then enforces policy on the verdict.
+## What is datacat
 
-## The problem
+datacat is a real time traffic classification platform. It watches live web
+traffic and tells, per session, whether the visitor is a human, a verified AI
+agent, unverified automation, or an abusive bot. It then acts on that verdict
+at the edge: allow, rate limit, challenge with a proof of work page, or block.
 
-Automated traffic is now a huge share of the web, and "bots bad, humans good" has collapsed:
-
-- AI agents transact on behalf of real customers. Blocking them loses revenue; ignoring scrapers burns money.
-- User-Agent strings are spoofed, CAPTCHAs are solved by the agents themselves, IP reputation fails against residential proxies.
-- Sites cannot price, police, or serve what they cannot classify.
-
-datacat answers, per session, within seconds: **human / verified agent / unverified automation / abusive** - using behavioral and protocol signals that are hard to fake - and turns verdicts into enforcement (allow, rate-limit, challenge, block) and analytics.
-
-## Architecture
+It is built as an event driven system of small services:
 
 ```
 Client traffic
       |
-edge-proxy (Go, EKS) ──── emits request events + sensor beacons
-      |                    (timing, header order, TLS fingerprint)
+edge-proxy (Go) ......... observes requests, verifies agent signatures,
+      |                   enforces decisions (403, 429, challenge page)
       v
-   Kafka ──── events partitioned by session ID
+   Kafka (Redpanda) ..... request events, keyed by session
       |
-classifier-job (Flink/Java) ──── keyed state per session, windows over
-      |                          timing variance, navigation entropy,
-      |                          fingerprint consistency → verdict stream
-      +──> DynamoDB ──── session verdicts, fingerprint reputation
-      +──> S3 ─────────── raw event archive (Parquet)
-      +──> Kafka verdicts topic ──> enforcement (Go): block/limit/challenge
-      |
-Step Functions ──── agent-verification workflow (register → prove
-      |             ownership → issue credential → periodic re-check)
-policy-service (Spring Boot) ──── rules CRUD, JPA
-dashboard (React) ──── live human/agent split, session explorer
-Lambda + API Gateway ──── public verdict API
-traffic-sim (Go) ──── human / polite-agent / scraper generators
+classifier-job (Flink) .. sliding windows, behavior signals plus identity,
+      |                   emits a verdict when a classification changes
+      v
+enforcement (Go) ........ applies policy, stores decisions, publishes them
+      |                   back to Kafka and serves a small HTTP API
+      v
+dashboard (React) ....... live chart of classifications
+traffic-sim (Go) ........ demo personas: human, polite agent, scraper
 ```
 
-Everything is provisioned by Terraform, deployed to EKS via GitHub Actions, observed through CloudWatch.
+Everything runs locally for free with Docker Compose. Helm charts deploy the
+services to a kind cluster, and Terraform modules provision the (local)
+infrastructure. The engineering rules live in `docs/standards/` and are
+binding for every line of code.
 
-## Repository layout
+## The problem it solves
 
+A large share of web traffic is now automated, and the old line between bots
+and humans has collapsed:
+
+- AI agents shop and browse on behalf of real customers. Blocking them loses
+  revenue, while a scraper hitting the same endpoint only burns money.
+- The old signals are dead. User agent strings are spoofed, CAPTCHAs are
+  solved by the same automation they try to stop, and IP reputation fails
+  against residential proxies.
+- When abuse happens, the response is usually manual: someone greps logs days
+  later.
+
+datacat answers the question a site actually needs answered, within seconds
+and per session: who is this, and what should happen to their next request.
+Humans pass untouched, agents that prove their identity with a signature get
+a rate limited lane, suspicious sessions must solve a browser challenge, and
+abusive sessions get blocked, all automatically.
+
+## How to set it up
+
+Prerequisites: Docker Desktop, Go 1.26+, Node 20+, and a JDK for Gradle
+(the build auto provisions the right Java toolchains). No cloud account is
+needed, everything runs on your machine.
+
+1. Start the infrastructure and services:
+
+```bash
+docker compose up -d
+docker compose up topic-init
 ```
-datacat/
-├── services/
-│   ├── edge-proxy/          Go   - request interception, event emission
-│   ├── enforcement/         Go   - consumes verdicts, applies actions
-│   ├── traffic-sim/         Go   - traffic generators (test harness)
-│   ├── policy-service/      Java - Spring Boot rules CRUD
-│   └── classifier-job/      Java - Flink streaming classification
-├── pkg/                     shared Go libraries (events, kafkax, httpx, obsx)
-├── web/dashboard/           React SPA
-├── infra/terraform/         modules: network, eks, kafka, dynamo, lambda, sfn
-├── deploy/k8s/              manifests / Helm charts per service
-├── .github/workflows/       CI/CD pipelines
-└── docs/
-    └── standards/           THE code standard - read before writing anything
+
+This starts Redpanda (Kafka), a demo upstream site, the Flink cluster, the
+edge proxy on port 8080, and enforcement on port 8081, then creates the
+three topics. Note: topics vanish on `docker compose down`, so rerun
+`topic-init` after every fresh start.
+
+2. Build and submit the classifier job:
+
+```bash
+cd services/classifier-job && ./gradlew shadowJar && cd ../..
+docker cp services/classifier-job/build/libs/classifier-job-0.0.1-SNAPSHOT.jar datacat-flink-jobmanager-1:/tmp/classifier-job.jar
+docker exec datacat-flink-jobmanager-1 flink run -d /tmp/classifier-job.jar
 ```
 
-## Status
+3. Start the dashboard:
 
-**The full loop works locally.** Traffic through the proxy becomes Kafka
-events; the Flink job classifies sessions on behavior (timing regularity,
-request rate, path entropy, user agent) and identity (Ed25519 trusted-agent
-signatures); enforcement turns verdicts into decisions; the gate applies
-them - block (403), challenge (proof-of-work interstitial with signed
-clearances), rate-limit (per-session token buckets), allow. The dashboard
-charts classifications live. Terraform provisions the (local) infrastructure;
-Helm charts deploy to kind; CI gates every push.
+```bash
+cd web/dashboard
+npm install
+echo "VITE_API_BASE_URL=http://localhost:8081" > .env
+npm run dev
+```
 
-Try it: `docker compose up -d`, submit the classifier jar to the Flink
-cluster (see `deploy/k8s/README.md` and compose comments), then
-`docker compose --profile demo up traffic-sim` and watch the scraper get
-caught.
+4. Send demo traffic with the three personas:
 
-Still ahead: the AWS phase (EKS/MSK/DynamoDB via the Terraform staging env),
-TLS fingerprinting, and true wire-order header capture.
+```bash
+docker compose --profile demo up traffic-sim
+```
 
-`docs/standards/` is the contract for all code in this repo - read
-[docs/standards/README.md](docs/standards/README.md) before contributing.
+5. Watch it work:
+
+- Dashboard: http://localhost:5173 (all four classes fill in within a minute)
+- Flink UI: http://localhost:8086
+- Decisions API: `curl http://localhost:8081/v1/decisions/sim-scraper`
+- Live verdicts: `docker exec datacat-redpanda-1 rpk topic consume datacat.verdicts`
+- Feel the gate yourself: `curl -b dc_session=sim-scraper localhost:8080/x`
+  returns 403 once the scraper is blocked, while your own browser session
+  passes normally at http://localhost:8080
+
+6. Stop everything:
+
+```bash
+docker compose down
+```
+
+## Credentials needed
+
+No external accounts or paid services are required for the local setup.
+The values below are environment variables, all with working local defaults
+already wired into `docker-compose.yml`:
+
+| Variable | Service | Required | Purpose |
+|---|---|---|---|
+| `CHALLENGE_SECRET` | edge-proxy | yes | Signs challenge tokens and clearance cookies. Any random string locally. In Kubernetes it must come from a Secret: `kubectl create secret generic edge-proxy-secrets --from-literal=CHALLENGE_SECRET=$(openssl rand -hex 32)` |
+| `AGENT_KEYS` | edge-proxy | no | Trusted agent public keys as `keyid=hexpubkey`. The compose file ships a dev key pair |
+| `AGENT_KEY_SEED` | traffic-sim | no | Derives the demo agent signing key matching `AGENT_KEYS` |
+| `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` | enforcement | no | Only when enabling the DynamoDB store against DynamoDB Local, any dummy values work (`local` / `local`) |
+
+Real AWS credentials are only needed for the future cloud deployment through
+`infra/terraform/envs/staging`, which is optional and documented separately
+in `infra/terraform/README.md`.
+
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE).
