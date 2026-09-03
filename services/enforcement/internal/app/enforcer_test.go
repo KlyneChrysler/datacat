@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/KlyneChrysler/datacat/pkg/obsx"
 	"github.com/KlyneChrysler/datacat/pkg/policy"
 )
 
@@ -77,7 +78,7 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 			store := &fakeStore{err: tt.storeErr}
 			publisher := &fakePublisher{err: tt.publishErr}
 			applier := &fakeApplier{err: tt.applierErr}
-			enforcer := NewEnforcer(policy.DefaultPolicy(), store, publisher, applier, NewTally())
+			enforcer := NewEnforcer(policy.DefaultPolicy(), store, publisher, applier, NewTally(), obsx.NewTestMetrics())
 
 			err := enforcer.HandleVerdict(context.Background(), abusiveVerdict(t))
 
@@ -97,7 +98,7 @@ func TestEnforcerHandleVerdict(t *testing.T) {
 
 func TestEnforcerLookupReturnsStoredDecision(t *testing.T) {
 	store := &fakeStore{}
-	enforcer := NewEnforcer(policy.DefaultPolicy(), store, &fakePublisher{}, &fakeApplier{}, NewTally())
+	enforcer := NewEnforcer(policy.DefaultPolicy(), store, &fakePublisher{}, &fakeApplier{}, NewTally(), obsx.NewTestMetrics())
 	if err := enforcer.HandleVerdict(context.Background(), abusiveVerdict(t)); err != nil {
 		t.Fatal(err)
 	}

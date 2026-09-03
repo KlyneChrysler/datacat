@@ -1,15 +1,22 @@
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8082}
 
 spring:
   application:
     name: policy-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
 
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
   endpoint:
     health:
       probes:

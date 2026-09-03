@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/KlyneChrysler/datacat/pkg/obsx"
 	"github.com/KlyneChrysler/datacat/pkg/policy"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
 )
@@ -16,16 +17,19 @@ type Enforcer struct {
 	publisher ports.DecisionPublisher
 	applier   ports.ActionApplier
 	tally     *Tally
+	metrics   *obsx.Metrics
 }
 
-func NewEnforcer(policy policy.Policy, store ports.DecisionStore, publisher ports.DecisionPublisher, applier ports.ActionApplier, tally *Tally) *Enforcer {
-	return &Enforcer{policy: policy, store: store, publisher: publisher, applier: applier, tally: tally}
+func NewEnforcer(policy policy.Policy, store ports.DecisionStore, publisher ports.DecisionPublisher, applier ports.ActionApplier, tally *Tally, metrics *obsx.Metrics) *Enforcer {
+	return &Enforcer{policy: policy, store: store, publisher: publisher, applier: applier, tally: tally, metrics: metrics}
 }
 
 // HandleVerdict runs the full decision pipeline for one verdict.
 func (e *Enforcer) HandleVerdict(ctx context.Context, v policy.Verdict) error {
 	e.tally.Record(v.Class)
+	e.metrics.CountVerdict(string(v.Class))
 	decision := e.policy.Decide(v)
+	e.metrics.CountAction(string(decision.Action))
 
 	if err := e.store.Save(ctx, decision); err != nil {
 		return fmt.Errorf("save decision for session %s: %w", v.SessionID, err)

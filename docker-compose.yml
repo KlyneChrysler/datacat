@@ -53,6 +53,29 @@ services:
     depends_on:
       - redpanda
 
+  policy-postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: policy
+      POSTGRES_PASSWORD: policy
+      POSTGRES_DB: policy
+    ports:
+      - "5433:5432"
+
+  policy-service:
+    build:
+      context: services/policy-service
+      dockerfile: Dockerfile
+    environment:
+      PORT: "8082"
+      DB_URL: jdbc:postgresql://policy-postgres:5432/policy
+      DB_USER: policy
+      DB_PASSWORD: policy
+    ports:
+      - "8082:8082"
+    depends_on:
+      - policy-postgres
+
   # Single binary mode, no Kafka or Flink: docker compose --profile lite up lite whoami
   lite:
     build:

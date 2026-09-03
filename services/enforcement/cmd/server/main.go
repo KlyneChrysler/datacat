@@ -22,6 +22,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/app"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/config"
 	"github.com/KlyneChrysler/datacat/services/enforcement/internal/ports"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func main() {
@@ -55,10 +56,11 @@ func run() error {
 		return err
 	}
 
+	metrics := obsx.NewMetrics("enforcement", prometheus.NewRegistry())
 	publisher := kafka.NewDecisionPublisher(producer, cfg.DecisionsTopic)
-	enforcer := app.NewEnforcer(policy.DefaultPolicy(), store, publisher, actions.NewLogApplier(log), app.NewTally())
+	enforcer := app.NewEnforcer(policy.DefaultPolicy(), store, publisher, actions.NewLogApplier(log), app.NewTally(), metrics)
 	source := kafka.NewVerdictSource(consumer)
-	router := httpapi.NewRouter(httpapi.New(enforcer, log), log, cfg.CORSOrigin)
+	router := httpapi.NewRouter(httpapi.New(enforcer, log), log, cfg.CORSOrigin, metrics)
 	server := httpx.NewServer(cfg.Port, router, cfg.ShutdownTimeout)
 
 	log.Info("starting", "port", cfg.Port, "topic", cfg.VerdictsTopic, "group", cfg.ConsumerGroup)
