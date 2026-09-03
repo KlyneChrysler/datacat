@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/KlyneChrysler/datacat/pkg/events"
+	"github.com/KlyneChrysler/datacat/pkg/obsx"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/ports"
 )
 
@@ -14,16 +15,19 @@ import (
 type Recorder struct {
 	publisher ports.EventPublisher
 	log       *slog.Logger
+	metrics   *obsx.Metrics
 	queue     chan events.RequestEvent
 	dropped   atomic.Int64
 }
 
-func NewRecorder(publisher ports.EventPublisher, log *slog.Logger, bufferSize int) *Recorder {
-	return &Recorder{publisher: publisher, log: log, queue: make(chan events.RequestEvent, bufferSize)}
+func NewRecorder(publisher ports.EventPublisher, log *slog.Logger, metrics *obsx.Metrics, bufferSize int) *Recorder {
+	return &Recorder{publisher: publisher, log: log, metrics: metrics, queue: make(chan events.RequestEvent, bufferSize)}
 }
 
 // Record enqueues an event, dropping it when the queue is full.
 func (r *Recorder) Record(ev events.RequestEvent) {
+	r.metrics.CountRequest(ev.VerifiedAgent)
+
 	select {
 	case r.queue <- ev:
 	default:

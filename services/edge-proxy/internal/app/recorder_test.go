@@ -30,7 +30,7 @@ func (f *fakePublisher) count() int {
 
 func TestRecorderPublishesQueuedEvents(t *testing.T) {
 	publisher := &fakePublisher{}
-	recorder := NewRecorder(publisher, obsx.NewLogger("test"), 8)
+	recorder := NewRecorder(publisher, obsx.NewLogger("test"), obsx.NewTestMetrics(), 8)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() { _ = recorder.Run(ctx) }()
@@ -42,7 +42,7 @@ func TestRecorderPublishesQueuedEvents(t *testing.T) {
 }
 
 func TestRecorderDropsWhenQueueFull(t *testing.T) {
-	recorder := NewRecorder(&fakePublisher{}, obsx.NewLogger("test"), 1)
+	recorder := NewRecorder(&fakePublisher{}, obsx.NewLogger("test"), obsx.NewTestMetrics(), 1)
 	// Run is never started, so the queue never drains.
 	recorder.Record(events.RequestEvent{SessionID: "s-1"})
 	recorder.Record(events.RequestEvent{SessionID: "s-2"}) // must not block

@@ -24,6 +24,7 @@ import (
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/adapters/observe"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/app"
 	"github.com/KlyneChrysler/datacat/services/edge-proxy/internal/config"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func main() {
@@ -53,13 +54,14 @@ func run() error {
 		return err
 	}
 
-	recorder := app.NewRecorder(kafka.NewEventPublisher(producer, cfg.RequestsTopic), log, cfg.EventBufferSize)
+	metrics := obsx.NewMetrics("edge-proxy", prometheus.NewRegistry())
+	recorder := app.NewRecorder(kafka.NewEventPublisher(producer, cfg.RequestsTopic), log, metrics, cfg.EventBufferSize)
 	gatekeeper := guard.NewGatekeeper(cfg.GateTTL)
 	limiter := guard.NewRateLimiter(cfg.RateLimitPerMinute, cfg.RateLimitBurst, cfg.GateTTL)
 	challenger := guard.NewChallenger(cfg.ChallengeSecret, cfg.ChallengeDifficulty)
 	traffic := gate.New(gatekeeper, limiter, challenger, log)
 	decisions := kafka.NewDecisionSource(consumer)
-	server := httpx.NewServer(cfg.Port, newRouter(cfg, recorder, traffic, challenger, log), cfg.ShutdownTimeout)
+	server := httpx.NewServer(cfg.Port, newRouter(cfg, recorder, traffic, challenger, metrics, log), cfg.ShutdownTimeout)
 
 	log.Info("starting", "port", cfg.Port, "upstream", cfg.UpstreamURL.String(), "topic", cfg.RequestsTopic)
 
@@ -74,7 +76,7 @@ func run() error {
 }
 
 // newRouter wires the traffic path, health and challenge stay outside the gate.
-func newRouter(cfg config.Config, recorder *app.Recorder, traffic *gate.Gate, challenger *guard.Challenger, log *slog.Logger) http.Handler {
+func newRouter(cfg config.Config, recorder *app.Recorder, traffic *gate.Gate, challenger *guard.Challenger, metrics *obsx.Metrics, log *slog.Logger) http.Handler {
 	agentCheck := agentauth.Middleware(guard.NewAgentVerifier(cfg.AgentKeys))
 	proxied := httpx.WithMiddleware(proxy.New(cfg.UpstreamURL, log), agentCheck, observe.Middleware(recorder), traffic.Middleware())
 	verification := challenge.New(challenger, log)
@@ -82,6 +84,7 @@ func newRouter(cfg config.Config, recorder *app.Recorder, traffic *gate.Gate, ch
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", httpx.Alive)
 	mux.HandleFunc("GET /readyz", httpx.Ready)
+	mux.Handle("GET /metrics", metrics.Handler())
 	verification.Mount(mux)
 	mux.Handle("/", proxied)
 

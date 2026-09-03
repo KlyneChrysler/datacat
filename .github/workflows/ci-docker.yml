@@ -18,3 +18,12 @@ jobs:
       - run: docker build -f services/${{ matrix.service }}/Dockerfile -t datacat/${{ matrix.service }}:ci .
       - run: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
       - run: trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed datacat/${{ matrix.service }}:ci
+
+  # policy-service builds from its own directory context, not the repo root.
+  policy-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f services/policy-service/Dockerfile -t datacat/policy-service:ci services/policy-service
+      - run: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      - run: trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed datacat/policy-service:ci
