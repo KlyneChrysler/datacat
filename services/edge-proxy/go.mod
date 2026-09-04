@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	github.com/KlyneChrysler/datacat/pkg/agentsig v0.0.0 // indirect
 	github.com/KlyneChrysler/datacat/pkg/policy v0.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -52,3 +53,5 @@ replace (
 require github.com/prometheus/client_golang v1.24.1
 
 replace github.com/KlyneChrysler/datacat/pkg/policy => ../../pkg/policy
+
+replace github.com/KlyneChrysler/datacat/pkg/agentsig => ../../pkg/agentsig

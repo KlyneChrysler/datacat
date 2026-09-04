@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -20,9 +19,5 @@ func Load() (Config, error) {
 }
 
 func validate(c Config) error {
-	if c.TargetURL == "" {
-		return fmt.Errorf("config: TARGET_URL is required")
-	}
-
-	return nil
+	return envx.Require(map[string]string{"TARGET_URL": c.TargetURL})
 }

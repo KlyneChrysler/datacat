@@ -56,4 +56,9 @@ replace (
 
 replace github.com/KlyneChrysler/datacat/pkg/policy => ../../pkg/policy
 
-require github.com/prometheus/client_golang v1.24.1
+require (
+	github.com/KlyneChrysler/datacat/pkg/envx v0.0.0-00010101000000-000000000000
+	github.com/prometheus/client_golang v1.24.1
+)
+
+replace github.com/KlyneChrysler/datacat/pkg/envx => ../../pkg/envx

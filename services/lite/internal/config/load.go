@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-	"net/url"
 	"os"
 	"time"
 
@@ -12,7 +10,7 @@ import (
 
 // Load reads and validates all configuration, crashing on missing values.
 func Load() (Config, error) {
-	upstream, err := parseUpstream(os.Getenv("UPSTREAM_URL"))
+	upstream, err := envx.Upstream()
 	if err != nil {
 		return Config{}, err
 	}
@@ -36,25 +34,6 @@ func Load() (Config, error) {
 	return cfg, validate(cfg)
 }
 
-func parseUpstream(raw string) (*url.URL, error) {
-	if raw == "" {
-		return nil, fmt.Errorf("config: UPSTREAM_URL is required")
-	}
-
-	upstream, err := url.Parse(raw)
-	if err != nil {
-		return nil, fmt.Errorf("config: UPSTREAM_URL invalid: %w", err)
-	}
-
-	return upstream, nil
-}
-
 func validate(c Config) error {
-	for name, v := range map[string]string{"PORT": c.Port, "CHALLENGE_SECRET": c.ChallengeSecret} {
-		if v == "" {
-			return fmt.Errorf("config: %s is required", name)
-		}
-	}
-
-	return nil
+	return envx.Require(map[string]string{"PORT": c.Port, "CHALLENGE_SECRET": c.ChallengeSecret})
 }

@@ -94,10 +94,35 @@ language idiom demands it (documented per language, per case).
 Shared logic lives in the shared layer (`pkg/` in Go, common packages in
 Java, `lib/` in React). A generic helper inside a service is a defect: if
 it is generic, it belongs to the shared layer; if it is not generic, it
-must be named for its specific task. The second copy of any logic is a
-build-stopping defect. (YAGNI still bounds *speculative* abstraction: do
-not build for imagined callers - but organizing existing code by kind is
-never speculative.)
+must be named for its specific task. (YAGNI still bounds *speculative*
+abstraction: do not build for imagined callers - but organizing existing
+code by kind is never speculative.)
+
+**No duplicate function or method, anywhere.** Two functions that do the
+same thing are one function in the wrong number of places. This is
+unforgiving and has no size exception:
+
+- **Byte-identical bodies** are a build-stopping defect. The second copy is
+  deleted and every caller points at the one that remains.
+- **Same logic, cosmetic differences** (renamed locals, reordered
+  independent statements, a different literal that should be a parameter)
+  counts as duplicate. Extract one function; pass the difference as an
+  argument.
+- **Same shape across languages that share a contract** (the Go signature
+  base and the Flink signature base, a wire struct and its mirror) is
+  allowed ONLY because the languages cannot import each other; a test must
+  pin them together (see the wire-format tests), and a comment on each names
+  its twin.
+- **Placement of the one copy** follows the layer rules: used by two
+  services -> `pkg/`; used across one service's packages -> that service's
+  lowest shared package; used by one type -> a private method on it. Never
+  copy to avoid an import.
+- A test helper repeated across test files is duplication too: it moves to a
+  shared `_test` helper, one definition.
+
+The check before writing any function: does a function that already does
+this exist? If yes, call it. If it *almost* does, make the difference a
+parameter. Writing the second copy is never the answer.
 
 ### 9. Errors are handled, wrapped, and never swallowed
 

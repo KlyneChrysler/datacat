@@ -1,9 +1,10 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"time"
+
+	"github.com/KlyneChrysler/datacat/pkg/envx"
 )
 
 // Load reads and validates all configuration, crashing on missing values.
@@ -25,17 +26,11 @@ func Load() (Config, error) {
 }
 
 func validate(c Config) error {
-	for name, v := range map[string]string{
+	return envx.Require(map[string]string{
 		"PORT":            c.Port,
 		"KAFKA_BROKERS":   c.KafkaBrokers,
 		"VERDICTS_TOPIC":  c.VerdictsTopic,
 		"DECISIONS_TOPIC": c.DecisionsTopic,
 		"CONSUMER_GROUP":  c.ConsumerGroup,
-	} {
-		if v == "" {
-			return fmt.Errorf("config: %s is required", name)
-		}
-	}
-
-	return nil
+	})
 }

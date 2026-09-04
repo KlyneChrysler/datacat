@@ -1,6 +1,7 @@
 go 1.26
 
 use (
+	./pkg/agentsig
 	./pkg/edge
 	./pkg/envx
 	./pkg/events
